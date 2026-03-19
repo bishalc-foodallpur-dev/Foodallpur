@@ -16,7 +16,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="text-center py-20">
         <h2 className="text-4xl font-bold mb-4">
-          Order Food Anytime 🍔
+          Order Food Anytime 
         </h2>
         <p className="text-gray-600 mb-6">
           Fast delivery from your favorite restaurants
