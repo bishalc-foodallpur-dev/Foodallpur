@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState([
@@ -39,14 +40,16 @@ export default function Cart() {
   return (
     <main className="min-h-screen bg-[rgba(251,244,236,1)] pt-24 px-6">
 
-      <h1 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center">
-        🛒 Your Cart
+      {/* Title */}
+      <h1 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center flex items-center justify-center gap-2">
+        <ShoppingCart size={24} /> Your Cart
       </h1>
 
       {cartItems.length === 0 ? (
         <div className="text-center text-[rgba(69,50,26,1)]">
           Your cart is empty.
-          <div className="mt-5">
+
+          <div className="mt-6">
             <Link
               href="/menu"
               className="bg-[rgba(178,60,47,1)] text-white px-6 py-3 rounded-lg shadow hover:scale-105 transition"
@@ -62,7 +65,7 @@ export default function Cart() {
           {cartItems.map((item) => (
             <div
               key={item.id}
-              className="flex justify-between items-center bg-white p-5 rounded-xl shadow hover:shadow-lg transition"
+              className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white p-5 rounded-2xl shadow-md hover:shadow-xl transition"
             >
               
               {/* Item Info */}
@@ -77,30 +80,33 @@ export default function Cart() {
 
               {/* Quantity Controls */}
               <div className="flex items-center space-x-3">
+                
                 <button
                   onClick={() => updateQty(item.id, "dec")}
-                  className="px-3 py-1 bg-[rgba(178,60,47,1)] text-white rounded hover:scale-110 transition"
+                  className="p-2 bg-[rgba(178,60,47,1)] text-white rounded-lg hover:scale-110 transition"
                 >
-                  -
+                  <Minus size={16} />
                 </button>
 
-                <span className="font-semibold text-[rgba(69,50,26,1)]">
+                <span className="font-semibold text-[rgba(69,50,26,1)] w-6 text-center">
                   {item.qty}
                 </span>
 
                 <button
                   onClick={() => updateQty(item.id, "inc")}
-                  className="px-3 py-1 bg-[rgba(178,60,47,1)] text-white rounded hover:scale-110 transition"
+                  className="p-2 bg-[rgba(178,60,47,1)] text-white rounded-lg hover:scale-110 transition"
                 >
-                  +
+                  <Plus size={16} />
                 </button>
+
               </div>
 
               {/* Remove */}
               <button
                 onClick={() => removeItem(item.id)}
-                className="text-[rgba(178,60,47,1)] font-medium hover:underline"
+                className="flex items-center gap-1 text-[rgba(178,60,47,1)] hover:underline"
               >
+                <Trash2 size={16} />
                 Remove
               </button>
 
@@ -108,9 +114,9 @@ export default function Cart() {
           ))}
 
           {/* Summary */}
-          <div className="bg-white p-6 rounded-xl shadow-lg mt-10">
+          <div className="bg-white p-6 rounded-2xl shadow-lg mt-10">
 
-            <div className="flex justify-between mb-5">
+            <div className="flex justify-between mb-6">
               <span className="font-semibold text-[rgba(69,50,26,1)]">
                 Total:
               </span>
@@ -119,7 +125,8 @@ export default function Cart() {
               </span>
             </div>
 
-            <button className="w-full bg-[rgba(178,60,47,1)] text-white py-3 rounded-lg shadow hover:scale-105 transition">
+            <button className="w-full bg-[rgba(178,60,47,1)] text-white py-3 rounded-lg shadow hover:scale-105 transition flex items-center justify-center gap-2">
+              <ShoppingCart size={18} />
               Proceed to Checkout
             </button>
 
