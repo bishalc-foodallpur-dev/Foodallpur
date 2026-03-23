@@ -1,139 +1,91 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 
-export default function Cart() {
-  const [cartItems, setCartItems] = useState([
-    { id: 1, name: "Burger", price: 200, qty: 1 },
-    { id: 2, name: "Pizza", price: 500, qty: 2 },
-  ]);
+export default function CartPage() {
+  const { cart, increaseQty, decreaseQty, clearCart } = useCart();
 
-  const updateQty = (id, type) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              qty:
-                type === "inc"
-                  ? item.qty + 1
-                  : item.qty > 1
-                  ? item.qty - 1
-                  : 1,
-            }
-          : item
-      )
-    );
-  };
-
-  const removeItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const total = cartItems.reduce(
-    (sum, item) => sum + item.price * item.qty,
+  const total = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  return (
-    <main className="min-h-screen bg-[rgba(251,244,236,1)] pt-24 px-6">
+  const handleCheckout = async () => {
+    const user = auth.currentUser;
 
-      {/* Title */}
-      <h1 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center flex items-center justify-center gap-2">
-        <ShoppingCart size={24} /> Your Cart
+    if (!user) return alert("Please login first");
+
+    await addDoc(collection(db, "orders"), {
+      userId: user.uid,
+      email: user.email,
+      items: cart,
+      total,
+      status: "pending",
+      createdAt: new Date(),
+    });
+
+    alert("Order placed!");
+    clearCart();
+  };
+
+  return (
+    <div className="min-h-screen pt-24 p-6 bg-[rgba(251,244,236,1)]">
+
+      <h1 className="text-3xl font-bold text-center text-[rgba(178,60,47,1)] mb-6">
+        Cart 🛒
       </h1>
 
-      {cartItems.length === 0 ? (
-        <div className="text-center text-[rgba(69,50,26,1)]">
-          Your cart is empty.
+      <div className="max-w-3xl mx-auto space-y-4">
 
-          <div className="mt-6">
-            <Link
-              href="/menu"
-              className="bg-[rgba(178,60,47,1)] text-white px-6 py-3 rounded-lg shadow hover:scale-105 transition"
-            >
-              Go to Menu
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div className="max-w-4xl mx-auto space-y-6">
+        {cart.map((item) => (
+          <div key={item.id} className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
 
-          {/* Cart Items */}
-          {cartItems.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white p-5 rounded-2xl shadow-md hover:shadow-xl transition"
-            >
-              
-              {/* Item Info */}
-              <div>
-                <h2 className="text-lg font-semibold text-[rgba(69,50,26,1)]">
-                  {item.name}
-                </h2>
-                <p className="text-sm text-[rgba(178,60,47,1)] font-medium">
-                  Rs {item.price}
-                </p>
-              </div>
+            <div>
+              <h2 className="font-semibold">{item.name}</h2>
+              <p>${item.price}</p>
 
               {/* Quantity Controls */}
-              <div className="flex items-center space-x-3">
-                
+              <div className="flex items-center space-x-2 mt-2">
                 <button
-                  onClick={() => updateQty(item.id, "dec")}
-                  className="p-2 bg-[rgba(178,60,47,1)] text-white rounded-lg hover:scale-110 transition"
+                  onClick={() => decreaseQty(item.id)}
+                  className="px-2 bg-gray-200 rounded"
                 >
-                  <Minus size={16} />
+                  -
                 </button>
 
-                <span className="font-semibold text-[rgba(69,50,26,1)] w-6 text-center">
-                  {item.qty}
-                </span>
+                <span>{item.quantity}</span>
 
                 <button
-                  onClick={() => updateQty(item.id, "inc")}
-                  className="p-2 bg-[rgba(178,60,47,1)] text-white rounded-lg hover:scale-110 transition"
+                  onClick={() => increaseQty(item.id)}
+                  className="px-2 bg-gray-200 rounded"
                 >
-                  <Plus size={16} />
+                  +
                 </button>
-
               </div>
-
-              {/* Remove */}
-              <button
-                onClick={() => removeItem(item.id)}
-                className="flex items-center gap-1 text-[rgba(178,60,47,1)] hover:underline"
-              >
-                <Trash2 size={16} />
-                Remove
-              </button>
-
-            </div>
-          ))}
-
-          {/* Summary */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg mt-10">
-
-            <div className="flex justify-between mb-6">
-              <span className="font-semibold text-[rgba(69,50,26,1)]">
-                Total:
-              </span>
-              <span className="text-[rgba(178,60,47,1)] font-bold text-xl">
-                Rs {total}
-              </span>
             </div>
 
-            <button className="w-full bg-[rgba(178,60,47,1)] text-white py-3 rounded-lg shadow hover:scale-105 transition flex items-center justify-center gap-2">
-              <ShoppingCart size={18} />
-              Proceed to Checkout
-            </button>
-
+            <img
+              src={item.image}
+              className="w-16 h-16 object-cover rounded"
+            />
           </div>
+        ))}
 
+        <div className="text-right font-bold text-lg">
+          Total: ${total}
         </div>
-      )}
-    </main>
+
+        <button
+          onClick={handleCheckout}
+          className="w-full bg-[rgba(178,60,47,1)] text-white py-3 rounded-lg"
+        >
+          Checkout
+        </button>
+
+      </div>
+    </div>
   );
 }

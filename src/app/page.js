@@ -32,7 +32,7 @@ export default function Home() {
       setTimeout(() => {
         setCurrentVideo((prev) => getRandomIndex(prev));
         setFade(true);
-      }, 100); // KEEP AS YOU WANTED
+      }, 100);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -41,7 +41,7 @@ export default function Home() {
   return (
     <main className="bg-[rgba(251,244,236,1)] pt-20">
 
-      {/* 🎬 Video Hero Section */}
+      {/* 🎬 HERO SECTION */}
       <div className="relative w-full h-[75vh] overflow-hidden">
 
         <video
@@ -56,63 +56,83 @@ export default function Home() {
           }`}
         />
 
-        {/* Overlay text only */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 flex flex-col justify-center items-center text-center px-6">
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 flex flex-col justify-center items-center text-center px-6">
 
-          <h1 className="text-4xl md:text-6xl font-bold text-[rgba(251,244,236,1)] mb-4">
-            Delicious Food, Delivered Fast 🍔
+          <h1 className="text-4xl md:text-6xl font-bold text-[rgba(251,244,236,1)] mb-4 leading-tight">
+            Delicious Food <br /> Delivered Fast 🍔
           </h1>
 
-          <p className="text-[rgba(251,244,236,0.9)] max-w-xl">
-            Order fresh meals from FoodAllpur and enjoy hot, delicious food at your doorstep.
+          <p className="text-[rgba(251,244,236,0.85)] max-w-xl mb-6">
+            Order fresh meals from FoodAllpur and enjoy hot, tasty food at your doorstep with just a few clicks.
           </p>
+
+          <Link
+            href="/menu"
+            className="bg-[rgba(178,60,47,1)] text-white px-8 py-3 rounded-lg shadow-lg hover:scale-105 transition"
+          >
+            Order Now
+          </Link>
 
         </div>
       </div>
 
-      {/* ✅ CTA Button BELOW video */}
-      <div className="flex justify-center mt-10">
-        <Link
-          href="/menu"
-          className="bg-[rgba(178,60,47,1)] text-white px-8 py-3 rounded-lg shadow-md hover:scale-105 transition"
-        >
-          Order Now
-        </Link>
-      </div>
-
-      {/* Content Section */}
+      {/* FEATURES SECTION */}
       <div className="flex flex-col items-center px-6 pt-16 pb-20">
 
-        <div className="mt-10 grid md:grid-cols-3 gap-8 max-w-6xl w-full">
+        <h2 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center">
+          Why Choose FoodAllpur 🍽️
+        </h2>
 
-          <div className="p-6 rounded-xl bg-white shadow hover:shadow-lg hover:scale-105 transition text-center">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl w-full">
+
+          {/* Card 1 */}
+          <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]">
             <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
               🍕 Fast Delivery
             </h3>
             <p className="text-[rgba(69,50,26,1)] text-sm">
-              Get your food delivered quickly and fresh.
+              Get your food delivered quickly and fresh at your doorstep.
             </p>
           </div>
 
-          <div className="p-6 rounded-xl bg-white shadow hover:shadow-lg hover:scale-105 transition text-center">
+          {/* Card 2 */}
+          <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]">
             <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
               🍔 Best Quality
             </h3>
             <p className="text-[rgba(69,50,26,1)] text-sm">
-              High-quality and hygienic meals every time.
+              High-quality, hygienic and freshly prepared meals every time.
             </p>
           </div>
 
-          <div className="p-6 rounded-xl bg-white shadow hover:shadow-lg hover:scale-105 transition text-center">
+          {/* Card 3 */}
+          <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]">
             <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
               💳 Easy Payment
             </h3>
             <p className="text-[rgba(69,50,26,1)] text-sm">
-              Multiple secure payment options available.
+              Secure and multiple payment options for smooth checkout.
             </p>
           </div>
 
         </div>
+      </div>
+
+      {/* FOOTER CTA */}
+      <div className="bg-[rgba(178,60,47,1)] text-white py-12 text-center">
+
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">
+          Hungry? Order now and enjoy!
+        </h2>
+
+        <Link
+          href="/menu"
+          className="bg-white text-[rgba(178,60,47,1)] px-6 py-3 rounded-lg font-semibold hover:scale-105 transition"
+        >
+          Browse Menu
+        </Link>
+
       </div>
 
     </main>
