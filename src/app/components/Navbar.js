@@ -3,7 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Firebase
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 // Icons
 import {
@@ -19,9 +23,20 @@ import {
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const isLoggedIn = true;
-  const isAdmin = true;
+  // 🔥 Auth listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const isAdmin = user?.email === "youradmin@gmail.com"; // ✅ change this
   const cartCount = 3;
 
   const linkClass = (path) =>
@@ -33,6 +48,13 @@ export default function Navbar() {
 
   const handleLinkClick = () => setMenuOpen(false);
 
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
+
+  // 🔥 Prevent flicker
+  if (loading) return null;
+
   return (
     <nav className="bg-[rgba(251,244,236,0.95)] backdrop-blur-md px-6 shadow-lg h-20 flex items-center fixed top-0 left-0 w-full z-50">
       
@@ -40,15 +62,13 @@ export default function Navbar() {
         
         {/* Logo */}
         <Link href="/" className="flex items-center h-full">
-          <div className="h-16 flex items-center">
-            <Image
-              src="/logo.png"
-              alt="FoodAllpur Logo"
-              width={140}
-              height={140}
-              className="object-contain h-full w-auto"
-            />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="FoodAllpur Logo"
+            width={140}
+            height={140}
+            className="object-contain h-16 w-auto"
+          />
         </Link>
 
         {/* Desktop Menu */}
@@ -63,9 +83,7 @@ export default function Navbar() {
           </Link>
 
           <Link href="/cart" className="relative flex items-center gap-1">
-            <span className={linkClass("/cart")}>
-              <ShoppingCart size={18} /> Cart
-            </span>
+            <ShoppingCart size={18} /> Cart
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-3 bg-[rgba(178,60,47,1)] text-white text-xs px-2 py-0.5 rounded-full">
                 {cartCount}
@@ -73,20 +91,25 @@ export default function Navbar() {
             )}
           </Link>
 
-          <Link href="/profile" className={linkClass("/profile")}>
-            <User size={18} /> Profile
-          </Link>
+          {/* ✅ Only if logged in */}
+          {user && (
+            <Link href="/profile" className={linkClass("/profile")}>
+              <User size={18} /> Profile
+            </Link>
+          )}
 
+          {/* ✅ Admin only */}
           {isAdmin && (
             <Link href="/admin" className={linkClass("/admin")}>
               <Shield size={18} /> Admin
             </Link>
           )}
 
-          {!isLoggedIn ? (
+          {/* Auth */}
+          {!user ? (
             <Link
               href="/login"
-              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:scale-105 transition"
+              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg"
             >
               <LogIn size={18} /> Login
             </Link>
@@ -99,7 +122,10 @@ export default function Navbar() {
                 height={32}
                 className="rounded-full"
               />
-              <button className="flex items-center gap-1 text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1 text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
+              >
                 <LogOut size={18} /> Logout
               </button>
             </div>
@@ -120,45 +146,36 @@ export default function Navbar() {
       {menuOpen && (
         <div className="absolute top-20 left-0 w-full bg-[rgba(251,244,236,0.98)] backdrop-blur-md shadow-md flex flex-col space-y-4 p-5 md:hidden border-t border-[rgba(69,50,26,0.1)]">
 
-          <Link href="/" className={linkClass("/")} onClick={handleLinkClick}>
+          <Link href="/" onClick={handleLinkClick}>
             <Home size={18} /> Home
           </Link>
 
-          <Link href="/menu" className={linkClass("/menu")} onClick={handleLinkClick}>
+          <Link href="/menu" onClick={handleLinkClick}>
             <MenuIcon size={18} /> Menu
           </Link>
 
-          <Link href="/cart" onClick={handleLinkClick} className="relative flex items-center gap-1">
-            <span className={linkClass("/cart")}>
-              <ShoppingCart size={18} /> Cart
-            </span>
-            {cartCount > 0 && (
-              <span className="ml-2 bg-[rgba(178,60,47,1)] text-white text-xs px-2 py-0.5 rounded-full">
-                {cartCount}
-              </span>
-            )}
+          <Link href="/cart" onClick={handleLinkClick}>
+            <ShoppingCart size={18} /> Cart
           </Link>
 
-          <Link href="/profile" className={linkClass("/profile")} onClick={handleLinkClick}>
-            <User size={18} /> Profile
-          </Link>
+          {user && (
+            <Link href="/profile" onClick={handleLinkClick}>
+              <User size={18} /> Profile
+            </Link>
+          )}
 
           {isAdmin && (
-            <Link href="/admin" className={linkClass("/admin")} onClick={handleLinkClick}>
+            <Link href="/admin" onClick={handleLinkClick}>
               <Shield size={18} /> Admin
             </Link>
           )}
 
-          {!isLoggedIn ? (
-            <Link
-              href="/login"
-              onClick={handleLinkClick}
-              className="flex items-center justify-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg"
-            >
+          {!user ? (
+            <Link href="/login" onClick={handleLinkClick}>
               <LogIn size={18} /> Login
             </Link>
           ) : (
-            <button className="flex items-center gap-1 text-[rgba(69,50,26,1)]">
+            <button onClick={handleLogout}>
               <LogOut size={18} /> Logout
             </button>
           )}
