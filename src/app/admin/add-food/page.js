@@ -10,23 +10,46 @@ export default function AddFood() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Upload to Cloudinary
   const uploadToCloudinary = async () => {
     const formData = new FormData();
 
     formData.append("file", image);
-    formData.append("upload_preset", "YOUR_UPLOAD_PRESET"); // 🔥 replace
-    formData.append("cloud_name", "YOUR_CLOUD_NAME"); // 🔥 replace
+    formData.append("upload_preset", "foodallpur"); // ✅ your preset name
 
-    const res = await axios.post(
-      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
-      formData
-    );
+    try {
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1/dawgv2iso/image/upload",
+        formData
+      );
 
-    return res.data.secure_url;
+      return res.data.secure_url;
+    } catch (error) {
+      console.error("Cloudinary Upload Error:", error.response?.data || error.message);
+      throw new Error("Image upload failed");
+    }
   };
 
+  // ✅ Handle image selection + preview
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // Optional validation
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  // ✅ Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -51,13 +74,15 @@ export default function AddFood() {
 
       alert("Food added successfully!");
 
-      // reset
+      // reset form
       setName("");
       setPrice("");
       setImage(null);
+      setPreview(null);
+
     } catch (err) {
-      console.error(err);
-      alert("Error adding food");
+      console.error(err.message);
+      alert("Upload failed");
     } finally {
       setLoading(false);
     }
@@ -75,6 +100,7 @@ export default function AddFood() {
             Add Food 🍔
           </h1>
 
+          {/* Food Name */}
           <input
             type="text"
             placeholder="Food Name"
@@ -83,6 +109,7 @@ export default function AddFood() {
             onChange={(e) => setName(e.target.value)}
           />
 
+          {/* Price */}
           <input
             type="number"
             placeholder="Price"
@@ -91,20 +118,36 @@ export default function AddFood() {
             onChange={(e) => setPrice(e.target.value)}
           />
 
+          {/* Image Upload */}
           <input
             type="file"
             accept="image/*"
             className="w-full"
-            onChange={(e) => setImage(e.target.files[0])}
+            onChange={handleImageChange}
           />
 
+          {/* Preview */}
+          {preview && (
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-full h-40 object-cover rounded-lg"
+            />
+          )}
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[rgba(178,60,47,1)] text-white py-2 rounded-lg"
+            className="w-full bg-[rgba(178,60,47,1)] text-white py-2 rounded-lg flex justify-center items-center"
           >
-            {loading ? "Uploading..." : "Add Food"}
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              "Add Food"
+            )}
           </button>
+
         </form>
 
       </div>

@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import axios from "axios";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -14,11 +15,15 @@ export default function Profile() {
     name: "",
     phone: "",
     address: "",
+    photoURL: "",
   });
 
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // 🔥 Load profile from Firestore
+  // 🔥 Load profile
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
@@ -28,6 +33,7 @@ export default function Profile() {
 
       if (docSnap.exists()) {
         setProfile(docSnap.data());
+        setPreview(docSnap.data().photoURL);
       }
 
       setLoading(false);
@@ -36,11 +42,45 @@ export default function Profile() {
     fetchProfile();
   }, [user]);
 
+  // 🔥 Cloudinary upload
+  const uploadToCloudinary = async () => {
+    const formData = new FormData();
+    formData.append("file", image);
+    formData.append("upload_preset", "foodallpur"); // your preset
+
+    const res = await axios.post(
+      "https://api.cloudinary.com/v1_1/dawgv2iso/image/upload",
+      formData
+    );
+
+    return res.data.secure_url;
+  };
+
+  // 🔥 Handle image select
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setImage(file);
+
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
   // 🔥 Save profile
   const handleSave = async () => {
     try {
+      setSaving(true);
+
+      let imageUrl = profile.photoURL;
+
+      // upload new image if selected
+      if (image) {
+        imageUrl = await uploadToCloudinary();
+      }
+
       await setDoc(doc(db, "users", user.uid), {
         ...profile,
+        photoURL: imageUrl,
         email: user.email,
       });
 
@@ -48,6 +88,8 @@ export default function Profile() {
     } catch (err) {
       console.error(err);
       alert("Error saving profile");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -67,7 +109,21 @@ export default function Profile() {
             My Profile 👤
           </h1>
 
-          {/* Email (Gmail) */}
+          {/* Profile Image */}
+          <div className="flex flex-col items-center space-y-3">
+            <img
+              src={
+                preview ||
+                "https://via.placeholder.com/100"
+              }
+              alt="Profile"
+              className="w-24 h-24 rounded-full object-cover border"
+            />
+
+            <input type="file" accept="image/*" onChange={handleImageChange} />
+          </div>
+
+          {/* Email */}
           <div>
             <label className="text-sm text-gray-600">Email</label>
             <p className="font-semibold">{user?.email}</p>
@@ -78,7 +134,7 @@ export default function Profile() {
             <label className="text-sm text-gray-600">Name</label>
             <input
               type="text"
-              value={profile.name}
+              value={profile.name || ""}
               onChange={(e) =>
                 setProfile({ ...profile, name: e.target.value })
               }
@@ -92,7 +148,7 @@ export default function Profile() {
             <label className="text-sm text-gray-600">Phone Number</label>
             <input
               type="text"
-              value={profile.phone}
+              value={profile.phone || ""}
               onChange={(e) =>
                 setProfile({ ...profile, phone: e.target.value })
               }
@@ -105,7 +161,7 @@ export default function Profile() {
           <div>
             <label className="text-sm text-gray-600">Address</label>
             <textarea
-              value={profile.address}
+              value={profile.address || ""}
               onChange={(e) =>
                 setProfile({ ...profile, address: e.target.value })
               }
@@ -119,14 +175,15 @@ export default function Profile() {
 
             <button
               onClick={handleSave}
-              className="bg-[rgba(178,60,47,1)] text-white px-6 py-2 rounded-lg hover:opacity-90"
+              disabled={saving}
+              className="bg-[rgba(178,60,47,1)] text-white px-6 py-2 rounded-lg"
             >
-              Save Profile
+              {saving ? "Saving..." : "Save Profile"}
             </button>
 
             <button
               onClick={handleLogout}
-              className="bg-gray-800 text-white px-6 py-2 rounded-lg hover:opacity-90"
+              className="bg-gray-800 text-white px-6 py-2 rounded-lg"
             >
               Logout
             </button>
