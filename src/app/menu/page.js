@@ -1,77 +1,52 @@
 "use client";
 
-import Image from "next/image";
-import { ShoppingCart, Utensils } from "lucide-react";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 export default function Menu() {
-  const foods = [
-    {
-      id: 1,
-      name: "Burger",
-      price: 5,
-      image: "/foods/burger.jpg",
-    },
-    {
-      id: 2,
-      name: "Pizza",
-      price: 8,
-      image: "/foods/pizza.jpg",
-    },
-    {
-      id: 3,
-      name: "Fries",
-      price: 3,
-      image: "/foods/fries.jpg",
-    },
-  ];
+  const [foods, setFoods] = useState([]);
+
+  useEffect(() => {
+    const fetchFoods = async () => {
+      const querySnapshot = await getDocs(collection(db, "foods"));
+      const data = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setFoods(data);
+    };
+
+    fetchFoods();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-[rgba(251,244,236,1)] pt-24 px-6">
+    <div className="min-h-screen bg-[rgba(251,244,236,1)] pt-24 p-6">
 
-      {/* Title */}
-      <h1 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center flex items-center justify-center gap-2">
-        <Utensils size={24} /> Our Menu
+      <h1 className="text-3xl font-bold text-center text-[rgba(178,60,47,1)] mb-8">
+        Menu 🍽️
       </h1>
 
-      {/* Food Grid */}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+      <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
 
-        {foods.map((food) => (
-          <div
-            key={food.id}
-            className="bg-white rounded-2xl shadow-md hover:shadow-xl transition transform hover:-translate-y-1 overflow-hidden"
-          >
-            {/* Image */}
-            <div className="relative w-full h-48">
-              <Image
-                src={food.image}
-                alt={food.name}
-                fill
-                className="object-cover"
-              />
-            </div>
+        {foods.map(food => (
+          <div key={food.id} className="bg-white rounded-xl shadow p-4">
 
-            {/* Content */}
-            <div className="p-5">
+            <img
+              src={food.image}
+              alt={food.name}
+              className="w-full h-40 object-cover rounded-lg"
+            />
 
-              <h2 className="text-xl font-semibold text-[rgba(69,50,26,1)]">
-                {food.name}
-              </h2>
+            <h2 className="text-lg font-semibold mt-2">{food.name}</h2>
+            <p className="text-[rgba(178,60,47,1)] font-bold">
+              ${food.price}
+            </p>
 
-              <p className="text-[rgba(178,60,47,1)] font-bold mt-2 text-lg">
-                ${food.price}
-              </p>
-
-              <button className="mt-5 w-full flex items-center justify-center gap-2 bg-[rgba(178,60,47,1)] text-white py-2.5 rounded-lg hover:scale-105 transition">
-                <ShoppingCart size={18} />
-                Add to Cart
-              </button>
-
-            </div>
           </div>
         ))}
 
       </div>
-    </main>
+    </div>
   );
 }

@@ -36,7 +36,7 @@ export default function Navbar() {
     return () => unsubscribe();
   }, []);
 
-  const isAdmin = user?.email === "youradmin@gmail.com"; // ✅ change this
+  const isAdmin = user?.email === "bishalc.foodallpur@gmail.com"; // ✅ change this
   const cartCount = 3;
 
   const linkClass = (path) =>
@@ -100,8 +100,10 @@ export default function Navbar() {
 
           {/* ✅ Admin only */}
           {isAdmin && (
-            <Link href="/admin" className={linkClass("/admin")}>
-              <Shield size={18} /> Admin
+            <Link href="/admin/add-food">
+               <button className="bg-[rgba(178,60,47,1)] text-white px-6 py-2 rounded-lg">
+                 Add Food
+               </button>
             </Link>
           )}
 
