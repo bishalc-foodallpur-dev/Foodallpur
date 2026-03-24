@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function Menu() {
   const [foods, setFoods] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState({});
   const [quantities, setQuantities] = useState({});
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -24,30 +25,39 @@ export default function Menu() {
     cardBorder: "rgba(69, 50, 26, 0.15)",
   };
 
-  // Fetch foods
+  // ✅ Fetch foods safely
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "foods"), (snapshot) => {
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setFoods(data);
-    });
+    const unsubscribe = onSnapshot(
+      collection(db, "foods"),
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setFoods(data || []);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Firestore error:", error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
 
-  // Auto select category from Home
+  // ✅ Auto category from homepage
   useEffect(() => {
     if (categoryFromHome) {
       setSelectedCategory(categoryFromHome);
     }
   }, [categoryFromHome]);
 
-  // Categories from DB
+  // ✅ Safe categories
   const categories = [
     "all",
-    ...new Set(foods.map((f) => f.category).filter(Boolean)),
+    ...new Set((foods || []).map((f) => f?.category).filter(Boolean)),
   ];
 
   const handleTypeChange = (foodId, type) => {
@@ -93,12 +103,13 @@ export default function Menu() {
       : foods.filter((f) => f.category === selectedCategory);
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-
+    <div
+      className="min-h-screen p-4 md:p-6"
+      style={{ backgroundColor: colors.bg }}
+    >
       {/* CATEGORY FILTER */}
       <div className="mb-6 overflow-x-auto">
         <div className="flex gap-3 w-max mx-auto">
-
           {categories.map((cat) => {
             const isActive = selectedCategory === cat;
 
@@ -108,7 +119,9 @@ export default function Menu() {
                 onClick={() => setSelectedCategory(cat)}
                 className="px-4 py-2 rounded-full text-sm capitalize whitespace-nowrap"
                 style={{
-                  backgroundColor: isActive ? colors.primary : colors.dark,
+                  backgroundColor: isActive
+                    ? colors.primary
+                    : colors.dark,
                   color: colors.textLight,
                 }}
               >
@@ -116,109 +129,122 @@ export default function Menu() {
               </button>
             );
           })}
-
         </div>
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* LOADING STATE */}
+      {loading ? (
+        <p className="text-center" style={{ color: colors.dark }}>
+          Loading foods...
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFoods?.map((food) => {
+            const type = selectedType[food.id] || "full";
+            const qty = quantities[food.id] || 1;
 
-        {filteredFoods.map((food) => {
-          const type = selectedType[food.id] || "full";
-          const qty = quantities[food.id] || 1;
-
-          return (
-            <div
-              key={food.id}
-              className="p-4 rounded-xl shadow-md"
-              style={{
-                backgroundColor: colors.bg,
-                border: `1px solid ${colors.cardBorder}`,
-              }}
-            >
-
-              <img
-                src={food.image}
-                alt={food.name}
-                className="w-full h-40 object-cover rounded-lg mb-3"
-              />
-
-              <h2 className="font-bold text-lg" style={{ color: colors.dark }}>
-                {food.name}
-              </h2>
-
-              <p className="text-sm mb-2" style={{ color: colors.dark }}>
-                {food.category}
-              </p>
-
-              <div className="text-sm mb-3">
-                <p>Full: Rs. {food.fullPrice}</p>
-                <p>Half: Rs. {food.halfPrice}</p>
-              </div>
-
-              {/* TYPE */}
-              <div className="flex gap-2 mb-3">
-                <button
-                  onClick={() => handleTypeChange(food.id, "half")}
-                  style={{
-                    backgroundColor: type === "half" ? colors.primary : colors.dark,
-                    color: colors.textLight,
-                  }}
-                  className="px-3 py-1 rounded"
-                >
-                  Half
-                </button>
-
-                <button
-                  onClick={() => handleTypeChange(food.id, "full")}
-                  style={{
-                    backgroundColor: type === "full" ? colors.primary : colors.dark,
-                    color: colors.textLight,
-                  }}
-                  className="px-3 py-1 rounded"
-                >
-                  Full
-                </button>
-              </div>
-
-              {/* QTY */}
-              <div className="flex justify-center items-center gap-3 mb-3">
-                <button
-                  onClick={() => decreaseQty(food.id)}
-                  className="px-3 py-1 rounded text-white"
-                  style={{ backgroundColor: colors.dark }}
-                >
-                  -
-                </button>
-
-                <span style={{ color: colors.dark }}>{qty}</span>
-
-                <button
-                  onClick={() => increaseQty(food.id)}
-                  className="px-3 py-1 rounded text-white"
-                  style={{ backgroundColor: colors.dark }}
-                >
-                  +
-                </button>
-              </div>
-
-              {/* ADD */}
-              <button
-                onClick={() => handleAddToCart(food)}
-                className="w-full py-2 rounded-lg"
+            return (
+              <div
+                key={food.id}
+                className="p-4 rounded-xl shadow-md"
                 style={{
-                  backgroundColor: colors.primary,
-                  color: colors.textLight,
+                  backgroundColor: colors.bg,
+                  border: `1px solid ${colors.cardBorder}`,
                 }}
               >
-                Add to Cart
-              </button>
+                <img
+                  src={food.image}
+                  alt={food.name}
+                  className="w-full h-40 object-cover rounded-lg mb-3"
+                />
 
-            </div>
-          );
-        })}
+                <h2
+                  className="font-bold text-lg"
+                  style={{ color: colors.dark }}
+                >
+                  {food.name}
+                </h2>
 
-      </div>
+                <p
+                  className="text-sm mb-2"
+                  style={{ color: colors.dark }}
+                >
+                  {food.category}
+                </p>
+
+                <div className="text-sm mb-3">
+                  <p>Full: Rs. {food.fullPrice}</p>
+                  <p>Half: Rs. {food.halfPrice}</p>
+                </div>
+
+                {/* TYPE */}
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => handleTypeChange(food.id, "half")}
+                    style={{
+                      backgroundColor:
+                        type === "half"
+                          ? colors.primary
+                          : colors.dark,
+                      color: colors.textLight,
+                    }}
+                    className="px-3 py-1 rounded"
+                  >
+                    Half
+                  </button>
+
+                  <button
+                    onClick={() => handleTypeChange(food.id, "full")}
+                    style={{
+                      backgroundColor:
+                        type === "full"
+                          ? colors.primary
+                          : colors.dark,
+                      color: colors.textLight,
+                    }}
+                    className="px-3 py-1 rounded"
+                  >
+                    Full
+                  </button>
+                </div>
+
+                {/* QTY */}
+                <div className="flex justify-center items-center gap-3 mb-3">
+                  <button
+                    onClick={() => decreaseQty(food.id)}
+                    className="px-3 py-1 rounded text-white"
+                    style={{ backgroundColor: colors.dark }}
+                  >
+                    -
+                  </button>
+
+                  <span style={{ color: colors.dark }}>{qty}</span>
+
+                  <button
+                    onClick={() => increaseQty(food.id)}
+                    className="px-3 py-1 rounded text-white"
+                    style={{ backgroundColor: colors.dark }}
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* ADD */}
+                <button
+                  onClick={() => handleAddToCart(food)}
+                  className="w-full py-2 rounded-lg"
+                  style={{
+                    backgroundColor: colors.primary,
+                    color: colors.textLight,
+                  }}
+                >
+                  Add to Cart
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
