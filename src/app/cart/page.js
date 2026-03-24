@@ -1,90 +1,197 @@
 "use client";
 
+import { useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { auth } from "@/lib/firebase";
 
 export default function CartPage() {
   const { cart, increaseQty, decreaseQty, clearCart } = useCart();
+  const [loading, setLoading] = useState(false);
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  // Add default type if not present
+  const cartWithType = cart.map((item) => ({
+    ...item,
+    type: item.type || "full", // default full
+  }));
+
+  // Price logic (half = 60% of full price, you can adjust)
+  const getItemPrice = (item) => {
+    if (item.type === "half") {
+      return item.price * 0.6;
+    }
+    return item.price;
+  };
+
+  const total = cartWithType.reduce((sum, item) => {
+    return sum + getItemPrice(item) * item.quantity;
+  }, 0);
+
+  const updateType = (itemId, type) => {
+    const updatedCart = cart.map((item) =>
+      item.id === itemId ? { ...item, type } : item
+    );
+
+    // Update cart manually (if your context supports it, better to expose setter)
+    // fallback: reload workaround if needed
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    window.location.reload();
+  };
 
   const handleCheckout = async () => {
     const user = auth.currentUser;
 
-    if (!user) return alert("Please login first");
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
 
-    await addDoc(collection(db, "orders"), {
-      userId: user.uid,
-      email: user.email,
-      items: cart,
-      total,
-      status: "pending",
-      createdAt: new Date(),
-    });
+    if (cart.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
 
-    alert("Order placed!");
-    clearCart();
+    setLoading(true);
+
+    try {
+      await addDoc(collection(db, "orders"), {
+        userId: user.uid,
+        email: user.email,
+        items: cartWithType,
+        total,
+        status: "pending",
+        createdAt: new Date(),
+      });
+
+      alert("✅ Order placed successfully!");
+      clearCart();
+    } catch (error) {
+      console.error(error);
+      alert("❌ Failed to place order");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen pt-24 p-6 bg-[rgba(251,244,236,1)]">
-
-      <h1 className="text-3xl font-bold text-center text-[rgba(178,60,47,1)] mb-6">
+    <div
+      className="min-h-screen pt-24 p-6"
+      style={{ backgroundColor: "rgba(251,244,236,1)" }}
+    >
+      <h1
+        className="text-3xl font-bold text-center mb-6"
+        style={{ color: "rgba(178,60,47,1)" }}
+      >
         Cart 🛒
       </h1>
 
       <div className="max-w-3xl mx-auto space-y-4">
 
-        {cart.map((item) => (
-          <div key={item.id} className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-
-            <div>
-              <h2 className="font-semibold">{item.name}</h2>
-              <p>${item.price}</p>
-
-              {/* Quantity Controls */}
-              <div className="flex items-center space-x-2 mt-2">
-                <button
-                  onClick={() => decreaseQty(item.id)}
-                  className="px-2 bg-gray-200 rounded"
-                >
-                  -
-                </button>
-
-                <span>{item.quantity}</span>
-
-                <button
-                  onClick={() => increaseQty(item.id)}
-                  className="px-2 bg-gray-200 rounded"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <img
-              src={item.image}
-              className="w-16 h-16 object-cover rounded"
-            />
+        {/* Empty Cart */}
+        {cart.length === 0 ? (
+          <div className="bg-white p-6 rounded-lg shadow text-center">
+            <p className="text-gray-500">Your cart is empty</p>
           </div>
-        ))}
+        ) : (
+          cartWithType.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white p-4 rounded-lg shadow flex justify-between items-center hover:shadow-md transition"
+            >
+              <div className="w-full">
 
-        <div className="text-right font-bold text-lg">
-          Total: ${total}
-        </div>
+                {/* Name */}
+                <h2
+                  className="font-semibold"
+                  style={{ color: "rgba(69, 50, 26, 1)" }}
+                >
+                  {item.name}
+                </h2>
 
-        <button
-          onClick={handleCheckout}
-          className="w-full bg-[rgba(178,60,47,1)] text-white py-3 rounded-lg"
-        >
-          Checkout
-        </button>
+                {/* Price */}
+                <p className="text-sm">
+                  Price:{" "}
+                  <span style={{ color: "rgba(178,60,47,1)" }}>
+                    Rs. {getItemPrice(item).toFixed(2)}
+                  </span>
+                </p>
 
+                {/* Half / Full Toggle */}
+                <div className="flex space-x-2 mt-2">
+                  <button
+                    onClick={() => updateType(item.id, "half")}
+                    className={`px-3 py-1 rounded text-sm border ${
+                      item.type === "half"
+                        ? "bg-[rgba(178,60,47,1)] text-white"
+                        : "bg-gray-100"
+                    }`}
+                  >
+                    Half
+                  </button>
+
+                  <button
+                    onClick={() => updateType(item.id, "full")}
+                    className={`px-3 py-1 rounded text-sm border ${
+                      item.type === "full"
+                        ? "bg-[rgba(178,60,47,1)] text-white"
+                        : "bg-gray-100"
+                    }`}
+                  >
+                    Full
+                  </button>
+                </div>
+
+                {/* Quantity Controls */}
+                <div className="flex items-center space-x-2 mt-3">
+                  <button
+                    onClick={() => decreaseQty(item.id)}
+                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    -
+                  </button>
+
+                  <span className="font-medium">{item.quantity}</span>
+
+                  <button
+                    onClick={() => increaseQty(item.id)}
+                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Image */}
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-16 h-16 object-cover rounded ml-4"
+              />
+            </div>
+          ))
+        )}
+
+        {/* Total */}
+        {cart.length > 0 && (
+          <div className="text-right font-bold text-lg">
+            Total:{" "}
+            <span style={{ color: "rgba(178,60,47,1)" }}>
+              Rs. {total.toFixed(2)}
+            </span>
+          </div>
+        )}
+
+        {/* Checkout */}
+        {cart.length > 0 && (
+          <button
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
+            style={{ backgroundColor: "rgba(178,60,47,1)" }}
+          >
+            {loading ? "Processing..." : "Checkout"}
+          </button>
+        )}
       </div>
     </div>
   );

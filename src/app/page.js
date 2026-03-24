@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export default function Home() {
   const videos = [
@@ -17,13 +17,13 @@ export default function Home() {
   const [currentVideo, setCurrentVideo] = useState(0);
   const [fade, setFade] = useState(true);
 
-  const getRandomIndex = (current) => {
+  const getRandomIndex = useCallback((current) => {
     let next;
     do {
       next = Math.floor(Math.random() * videos.length);
     } while (next === current);
     return next;
-  };
+  }, [videos.length]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -32,26 +32,26 @@ export default function Home() {
       setTimeout(() => {
         setCurrentVideo((prev) => getRandomIndex(prev));
         setFade(true);
-      }, 100);
+      }, 500); // match fade duration
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [getRandomIndex]);
 
   return (
     <main className="bg-[rgba(251,244,236,1)] pt-20">
 
-      {/* 🎬 HERO SECTION */}
+      {/* HERO */}
       <div className="relative w-full h-[75vh] overflow-hidden">
 
         <video
-          key={currentVideo}
           src={videos[currentVideo]}
           autoPlay
           muted
           loop
           playsInline
-          className={`w-full h-full object-cover transition-opacity duration-1000 ${
+          preload="auto"
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
             fade ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -77,7 +77,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* FEATURES SECTION */}
+      {/* FEATURES */}
       <div className="flex flex-col items-center px-6 pt-16 pb-20">
 
         <h2 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center">
@@ -86,40 +86,37 @@ export default function Home() {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl w-full">
 
-          {/* Card 1 */}
-          <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]">
-            <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
-              🍕 Fast Delivery
-            </h3>
-            <p className="text-[rgba(69,50,26,1)] text-sm">
-              Get your food delivered quickly and fresh at your doorstep.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]">
-            <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
-              🍔 Best Quality
-            </h3>
-            <p className="text-[rgba(69,50,26,1)] text-sm">
-              High-quality, hygienic and freshly prepared meals every time.
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]">
-            <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
-              💳 Easy Payment
-            </h3>
-            <p className="text-[rgba(69,50,26,1)] text-sm">
-              Secure and multiple payment options for smooth checkout.
-            </p>
-          </div>
+          {[
+            {
+              title: "🍕 Fast Delivery",
+              desc: "Get your food delivered quickly and fresh at your doorstep.",
+            },
+            {
+              title: "🍔 Best Quality",
+              desc: "High-quality, hygienic and freshly prepared meals every time.",
+            },
+            {
+              title: "💳 Easy Payment",
+              desc: "Secure and multiple payment options for smooth checkout.",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]"
+            >
+              <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
+                {item.title}
+              </h3>
+              <p className="text-[rgba(69,50,26,1)] text-sm">
+                {item.desc}
+              </p>
+            </div>
+          ))}
 
         </div>
       </div>
 
-      {/* FOOTER CTA */}
+      {/* CTA */}
       <div className="bg-[rgba(178,60,47,1)] text-white py-12 text-center">
 
         <h2 className="text-2xl md:text-3xl font-bold mb-4">

@@ -2,193 +2,170 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { useCart } from "@/context/CartContext";
 
 export default function Menu() {
   const [foods, setFoods] = useState([]);
-  const [filteredFoods, setFilteredFoods] = useState([]);
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
-  const [size, setSize] = useState("full");
+  const [selectedType, setSelectedType] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const { addToCart } = useCart();
 
-  const colors = {
-    primary: "rgba(178, 60, 47, 1)",
-    background: "rgba(251, 244, 236, 1)",
-    text: "rgba(69, 50, 26, 1)",
-  };
-
-  // Manual categories
-  const categories = ["All", "pizza", "burger", "drinks", "momo", "snacks"];
-
   useEffect(() => {
-    const fetchFoods = async () => {
-      const querySnapshot = await getDocs(collection(db, "foods"));
-
-      const data = querySnapshot.docs.map((doc) => ({
+    const unsubscribe = onSnapshot(collection(db, "foods"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
       setFoods(data);
-      setFilteredFoods(data);
-    };
+    });
 
-    fetchFoods();
+    return () => unsubscribe();
   }, []);
 
-  // Filter logic
-  useEffect(() => {
-    let result = foods;
+  const categories = ["all", ...new Set(foods.map((f) => f.category))];
 
-    if (category !== "All") {
-      result = result.filter(
-        (food) => food.category === category
-      );
-    }
+  const handleTypeChange = (foodId, type) => {
+    setSelectedType((prev) => ({
+      ...prev,
+      [foodId]: type,
+    }));
+  };
 
-    if (search) {
-      result = result.filter((food) =>
-        food.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
+  const handleAddToCart = (food) => {
+    const type = selectedType[food.id] || "full";
 
-    setFilteredFoods(result);
-  }, [search, category, foods]);
+    const price =
+      type === "half" ? food.halfPrice : food.fullPrice;
+
+    addToCart({
+      id: food.id,
+      name: food.name,
+      image: food.image,
+      price,
+      type,
+    });
+  };
+
+  const filteredFoods =
+    selectedCategory === "all"
+      ? foods
+      : foods.filter((f) => f.category === selectedCategory);
 
   return (
     <div
-      className="min-h-screen pt-24 p-6"
-      style={{ backgroundColor: colors.background }}
+      className="min-h-screen p-6"
+      style={{ backgroundColor: "rgba(251,244,236,1)" }}
     >
-      {/* Title */}
-      <h1
-        className="text-3xl font-bold text-center mb-6"
-        style={{ color: colors.primary }}
-      >
-        Menu 🍽️
-      </h1>
 
-      {/* Search */}
-      <div className="flex justify-center mb-6">
-        <input
-          type="text"
-          placeholder="Search food..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md p-3 border rounded-lg shadow-sm focus:outline-none"
-          style={{ borderColor: colors.primary }}
-        />
-      </div>
-
-      {/* Categories */}
-      <div className="flex justify-center flex-wrap gap-3 mb-6">
+      {/* CATEGORY FILTER */}
+      <div className="flex gap-3 mb-6 flex-wrap justify-center">
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setCategory(cat)}
-            className="px-4 py-2 rounded-full border transition"
+            onClick={() => setSelectedCategory(cat)}
+            className="px-4 py-2 rounded font-medium capitalize"
             style={{
               backgroundColor:
-                category === cat ? colors.primary : "white",
-              color:
-                category === cat ? "white" : colors.text,
-              borderColor: colors.primary,
+                selectedCategory === cat
+                  ? "rgba(178,60,47,1)"
+                  : "rgba(69,50,26,1)",
+              color: "rgba(251,244,236,1)",
             }}
           >
-            {cat.toUpperCase()}
+            {cat}
           </button>
         ))}
       </div>
 
-      {/* Size Toggle */}
-      <div className="flex justify-center gap-3 mb-8">
-        {["half", "full"].map((s) => (
-          <button
-            key={s}
-            onClick={() => setSize(s)}
-            className="px-4 py-2 rounded-full border"
-            style={{
-              backgroundColor:
-                size === s ? colors.primary : "white",
-              color:
-                size === s ? "white" : colors.text,
-              borderColor: colors.primary,
-            }}
-          >
-            {s.toUpperCase()}
-          </button>
-        ))}
-      </div>
+      {/* FOOD GRID */}
+      <div className="grid md:grid-cols-3 gap-6">
 
-      {/* Food Grid */}
-      <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-
-        {filteredFoods.length === 0 ? (
-          <p
-            className="text-center col-span-3"
-            style={{ color: colors.text }}
+        {filteredFoods.map((food) => (
+          <div
+            key={food.id}
+            className="p-4 rounded shadow"
+            style={{ backgroundColor: "rgba(69, 50, 26, 1)" }}
           >
-            No food found
-          </p>
-        ) : (
-          filteredFoods.map((food) => (
-            <div
-              key={food.id}
-              className="bg-white rounded-xl shadow p-4"
-              style={{ border: `1px solid ${colors.primary}20` }}
+
+            <img
+              src={food.image}
+              className="w-full h-40 object-cover rounded"
+            />
+
+            <h2
+              className="text-lg font-bold mt-2"
+              style={{ color: "rgba(251,244,236,1)" }}
             >
-              <img
-                src={food.image}
-                alt={food.name}
-                className="w-full h-40 object-cover rounded-lg"
-              />
+              {food.name}
+            </h2>
 
-              <h2
-                className="text-lg font-semibold mt-2"
-                style={{ color: colors.text }}
-              >
-                {food.name}
-              </h2>
+            <p style={{ color: "rgba(251,244,236,0.8)" }}>
+              {food.category}
+            </p>
 
-              <p
-                className="text-sm capitalize"
-                style={{ color: colors.text }}
-              >
-                {food.category}
+            {/* PRICES */}
+            <div className="mt-2 space-y-1">
+              <p style={{ color: "rgba(251,244,236,1)" }}>
+                Full: Rs. {food.fullPrice}
               </p>
-
-              <p
-                className="font-bold"
-                style={{ color: colors.primary }}
-              >
-                $
-                {size === "half"
-                  ? food.halfPrice
-                  : food.fullPrice}
+              <p style={{ color: "rgba(251,244,236,1)" }}>
+                Half: Rs. {food.halfPrice}
               </p>
+            </div>
+
+            {/* TYPE SELECT */}
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => handleTypeChange(food.id, "half")}
+                className="px-3 py-1 rounded text-sm"
+                style={{
+                  backgroundColor:
+                    selectedType[food.id] === "half"
+                      ? "rgba(178,60,47,1)"
+                      : "rgba(251,244,236,1)",
+                  color:
+                    selectedType[food.id] === "half"
+                      ? "rgba(251,244,236,1)"
+                      : "rgba(69,50,26,1)",
+                }}
+              >
+                Half
+              </button>
 
               <button
-                onClick={() =>
-                  addToCart({
-                    ...food,
-                    selectedSize: size,
-                    price:
-                      size === "half"
-                        ? food.halfPrice
-                        : food.fullPrice,
-                  })
-                }
-                className="mt-3 w-full py-2 rounded-lg text-white"
-                style={{ backgroundColor: colors.primary }}
+                onClick={() => handleTypeChange(food.id, "full")}
+                className="px-3 py-1 rounded text-sm"
+                style={{
+                  backgroundColor:
+                    selectedType[food.id] === "full"
+                      ? "rgba(178,60,47,1)"
+                      : "rgba(251,244,236,1)",
+                  color:
+                    selectedType[food.id] === "full"
+                      ? "rgba(251,244,236,1)"
+                      : "rgba(69,50,26,1)",
+                }}
               >
-                Add to Cart 🛒
+                Full
               </button>
             </div>
-          ))
-        )}
+
+            {/* ADD TO CART */}
+            <button
+              onClick={() => handleAddToCart(food)}
+              className="w-full mt-3 py-2 rounded font-semibold"
+              style={{
+                backgroundColor: "rgba(178,60,47,1)",
+                color: "rgba(251,244,236,1)",
+              }}
+            >
+              Add to Cart
+            </button>
+
+          </div>
+        ))}
 
       </div>
     </div>

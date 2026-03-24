@@ -2,183 +2,169 @@
 
 import { useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import AdminLayout from "@/components/admin/AdminLayout";
+import { collection, addDoc } from "firebase/firestore";
+import { uploadImage } from "@/lib/cloudinary";
 
 export default function AddFood() {
-  const [form, setForm] = useState({
-    name: "",
-    halfPrice: "",
-    fullPrice: "",
-    image: "",
-    category: "",
-  });
-
-  const [customCategory, setCustomCategory] = useState("");
+  const [name, setName] = useState("");
+  const [fullPrice, setFullPrice] = useState("");
+  const [halfPrice, setHalfPrice] = useState("");
+  const [category, setCategory] = useState("");
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
-  // Default categories
-  const categories = ["pizza", "burger", "drinks", "momo", "snacks", "other"];
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setImage(file);
+
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 👉 Use custom category if "other"
-    const finalCategory =
-      form.category === "other" ? customCategory : form.category;
-
-    if (
-      !form.name ||
-      !form.halfPrice ||
-      !form.fullPrice ||
-      !form.image ||
-      !finalCategory
-    ) {
-      setMessage("⚠️ Please fill all fields");
+    if (!name || !fullPrice || !halfPrice || !category || !image) {
+      alert("❌ Please fill all fields");
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
-      setMessage("");
+      const imageUrl = await uploadImage(image);
+
+      if (!imageUrl) {
+        alert("❌ Image upload failed");
+        setLoading(false);
+        return;
+      }
 
       await addDoc(collection(db, "foods"), {
-        name: form.name,
-        halfPrice: Number(form.halfPrice),
-        fullPrice: Number(form.fullPrice),
-        image: form.image,
-        category: finalCategory.toLowerCase(), // ✅ normalize
-        createdAt: serverTimestamp(),
+        name: name.trim(),
+        fullPrice: Number(fullPrice),
+        halfPrice: Number(halfPrice),
+        category: category.toLowerCase().trim(),
+        image: imageUrl,
+        createdAt: new Date(),
       });
 
-      setMessage("✅ Food added successfully!");
+      alert("✅ Food added successfully!");
 
-      setForm({
-        name: "",
-        halfPrice: "",
-        fullPrice: "",
-        image: "",
-        category: "",
-      });
-
-      setCustomCategory("");
-
+      setName("");
+      setFullPrice("");
+      setHalfPrice("");
+      setCategory("");
+      setImage(null);
+      setPreview(null);
     } catch (error) {
       console.error(error);
-      setMessage("❌ Failed to add food");
-    } finally {
-      setLoading(false);
+      alert("❌ Error adding food");
     }
+
+    setLoading(false);
   };
 
   return (
-    <ProtectedRoute adminOnly={true}>
-      <AdminLayout>
-        <h1 className="text-2xl font-bold mb-6">Add Food</h1>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[rgba(251,244,236,1)]">
 
-        {message && (
-          <p className="mb-4 text-center font-medium">{message}</p>
-        )}
+      {/* THEMED SECTION */}
+      <div
+        className="w-full max-w-xl p-6 rounded-xl shadow-lg"
+        style={{ backgroundColor: "rgba(69, 50, 26, 1)" }}
+      >
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        <h2
+          className="text-2xl font-bold mb-6 text-center"
+          style={{ color: "rgba(251,244,236,1)" }}
+        >
+          Add Food 🍔
+        </h2>
 
-          {/* Name */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+
           <input
             type="text"
             placeholder="Food Name"
-            className="w-full p-3 border rounded"
-            value={form.name}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full p-3 rounded bg-transparent"
+            style={{
+              border: "1px solid rgba(251,244,236,1)",
+              color: "rgba(251,244,236,1)",
+            }}
           />
 
-          {/* Half Price */}
           <input
             type="number"
-            placeholder="Half Price"
-            className="w-full p-3 border rounded"
-            value={form.halfPrice}
-            onChange={(e) =>
-              setForm({ ...form, halfPrice: e.target.value })
-            }
+            placeholder="Full Price (Rs.)"
+            value={fullPrice}
+            onChange={(e) => setFullPrice(e.target.value)}
+            className="w-full p-3 rounded bg-transparent"
+            style={{
+              border: "1px solid rgba(251,244,236,1)",
+              color: "rgba(251,244,236,1)",
+            }}
           />
 
-          {/* Full Price */}
           <input
             type="number"
-            placeholder="Full Price"
-            className="w-full p-3 border rounded"
-            value={form.fullPrice}
-            onChange={(e) =>
-              setForm({ ...form, fullPrice: e.target.value })
-            }
+            placeholder="Half Price (Rs.)"
+            value={halfPrice}
+            onChange={(e) => setHalfPrice(e.target.value)}
+            className="w-full p-3 rounded bg-transparent"
+            style={{
+              border: "1px solid rgba(251,244,236,1)",
+              color: "rgba(251,244,236,1)",
+            }}
           />
 
-          {/* Category Select */}
-          <select
-            className="w-full p-3 border rounded"
-            value={form.category}
-            onChange={(e) =>
-              setForm({ ...form, category: e.target.value })
-            }
-          >
-            <option value="">Select Category</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat.toUpperCase()}
-              </option>
-            ))}
-          </select>
-
-          {/* 👉 Custom Category Input */}
-          {form.category === "other" && (
-            <input
-              type="text"
-              placeholder="Enter new category"
-              className="w-full p-3 border rounded"
-              value={customCategory}
-              onChange={(e) => setCustomCategory(e.target.value)}
-            />
-          )}
-
-          {/* Image */}
           <input
             type="text"
-            placeholder="Image URL"
-            className="w-full p-3 border rounded"
-            value={form.image}
-            onChange={(e) =>
-              setForm({ ...form, image: e.target.value })
-            }
+            placeholder="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full p-3 rounded bg-transparent"
+            style={{
+              border: "1px solid rgba(251,244,236,1)",
+              color: "rgba(251,244,236,1)",
+            }}
+          />
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="w-full"
+            style={{ color: "rgba(251,244,236,1)" }}
           />
 
           {/* Preview */}
-          {form.image && (
+          {preview && (
             <img
-              src={form.image}
-              alt="preview"
-              className="w-32 h-32 object-cover rounded border"
+              src={preview}
+              alt="Preview"
+              className="w-full h-40 object-cover rounded border"
+              style={{ border: "1px solid rgba(251,244,236,1)" }}
             />
           )}
 
-          {/* Button */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded text-white ${
-              loading
-                ? "bg-gray-400"
-                : "bg-red-600 hover:bg-red-700"
-            }`}
+            className="w-full py-3 rounded font-semibold transition disabled:opacity-50"
+            style={{
+              backgroundColor: "rgba(178,60,47,1)",
+              color: "rgba(251,244,236,1)",
+            }}
           >
-            {loading ? "Adding..." : "Add Food"}
+            {loading ? "Uploading..." : "Add Food"}
           </button>
 
         </form>
-      </AdminLayout>
-    </ProtectedRoute>
+      </div>
+    </div>
   );
 }
