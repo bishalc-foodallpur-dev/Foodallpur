@@ -1,38 +1,29 @@
 import { NextResponse } from "next/server";
+import QRCode from "qrcode";
 
 export async function POST(req) {
   try {
     const { amount, orderId } = await req.json();
 
-    const khaltiSecretKey = "YOUR_KHALTI_SECRET_KEY";
+    const merchantCode = process.env.FONEPAY_MERCHANT_CODE;
 
-    const response = await fetch("https://khalti.com/api/v2/epayment/initiate/", {
-      method: "POST",
-      headers: {
-        Authorization: `Key ${khaltiSecretKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        return_url: "http://localhost:3000/payment-success",
-        website_url: "http://localhost:3000",
-        amount: amount * 100, // Khalti uses paisa
-        purchase_order_id: orderId,
-        purchase_order_name: "Food Order",
-      }),
-    });
+    // Fonepay payment string (depends on merchant format)
+    const paymentString = `fonepay://pay?merchant=${merchantCode}&amount=${amount}&orderId=${orderId}`;
 
-    const data = await response.json();
+    // Generate QR as base64 image
+    const qrCodeDataURL = await QRCode.toDataURL(paymentString);
 
     return NextResponse.json({
       success: true,
-      paymentUrl: data.payment_url,
+      qrCode: qrCodeDataURL,
+      paymentString,
     });
 
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
-      { success: false, message: "Payment init failed" },
+      { success: false, message: "QR generation failed" },
       { status: 500 }
     );
   }

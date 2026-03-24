@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
-export default function AdminOrders() {
+export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
@@ -19,36 +19,15 @@ export default function AdminOrders() {
     return () => unsub();
   }, []);
 
-  const markAsPaid = async (orderId) => {
-    await fetch("/api/orders/update", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        orderId,
-        status: "paid",
-        paid: true,
-      }),
-    });
-  };
-
   return (
     <div className="p-6 pt-24">
-      <h1 className="text-2xl font-bold mb-6">Admin Orders</h1>
+      <h1 className="text-2xl font-bold mb-6">My Orders</h1>
 
       {orders.map((order) => (
         <div key={order.id} className="border p-4 mb-4 rounded">
           <p><strong>ID:</strong> {order.id}</p>
           <p><strong>Total:</strong> Rs {order.total}</p>
           <p><strong>Status:</strong> {order.status}</p>
-
-          <button
-            onClick={() => markAsPaid(order.id)}
-            className="mt-2 px-4 py-1 bg-green-500 text-white rounded"
-          >
-            Mark as Paid
-          </button>
         </div>
       ))}
     </div>

@@ -6,10 +6,13 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
+    console.log("ORDER BODY:", body);
+
     const docRef = await addDoc(collection(db, "orders"), {
       ...body,
-      createdAt: serverTimestamp(),
       status: "pending",
+      paid: false,
+      createdAt: serverTimestamp(),
     });
 
     return NextResponse.json({
@@ -18,10 +21,13 @@ export async function POST(req) {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("ORDER API ERROR:", error);
 
     return NextResponse.json(
-      { success: false, message: "Failed to save order" },
+      {
+        success: false,
+        message: error.message || "Failed to save order",
+      },
       { status: 500 }
     );
   }

@@ -2,14 +2,20 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 
 export default function PaymentSuccess() {
   const router = useRouter();
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    setTimeout(() => {
+    clearCart();
+
+    const timer = setTimeout(() => {
       router.push("/");
     }, 3000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (

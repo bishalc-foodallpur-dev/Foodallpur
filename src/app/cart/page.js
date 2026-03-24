@@ -16,7 +16,10 @@ export default function CartPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Calculate total
+  const [qrCode, setQrCode] = useState(null);
+  const [showQR, setShowQR] = useState(false);
+
+  // ✅ Calculate total
   useEffect(() => {
     let sum = 0;
 
@@ -32,7 +35,7 @@ export default function CartPage() {
     setTotal(sum);
   }, [cart]);
 
-  // ✅ Direct Payment Handler
+  // ✅ Payment handler (QR)
   const handlePayment = async () => {
     try {
       if (cart.length === 0) {
@@ -42,6 +45,7 @@ export default function CartPage() {
 
       setLoading(true);
 
+      // 1. Create order
       const order = {
         items: cart,
         total,
@@ -49,29 +53,24 @@ export default function CartPage() {
         status: "pending",
       };
 
-      // ✅ STEP 1: Save order to backend
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to create order");
+        throw new Error(data.message || "Order failed");
       }
 
       const orderId = data.orderId;
 
-      // ✅ STEP 2: Initiate payment
+      // 2. Generate QR
       const paymentRes = await fetch("/api/payment", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: total,
           orderId,
@@ -81,19 +80,15 @@ export default function CartPage() {
       const paymentData = await paymentRes.json();
 
       if (!paymentRes.ok) {
-        throw new Error(paymentData.message || "Payment init failed");
+        throw new Error(paymentData.message || "QR generation failed");
       }
 
-      // ✅ STEP 3: Redirect to payment gateway
-      if (paymentData.paymentUrl) {
-        window.location.href = paymentData.paymentUrl;
-      } else {
-        alert("Payment URL not received");
-      }
+      setQrCode(paymentData.qrCode);
+      setShowQR(true);
 
     } catch (error) {
-      console.error("Payment error:", error);
-      alert(error.message || "Payment failed");
+      console.error(error);
+      alert(error.message);
     } finally {
       setLoading(false);
     }
@@ -206,7 +201,8 @@ export default function CartPage() {
           })}
 
           {/* Total + Payment */}
-          <div className="mt-6 p-4 bg-white rounded-lg shadow flex justify-between items-center">
+          <div className="mt-6 p-4 bg-white rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center gap-4">
+            
             <h2 className="text-lg font-semibold text-[rgba(69,50,26,1)]">
               Total: Rs {total}
             </h2>
@@ -228,6 +224,25 @@ export default function CartPage() {
               </button>
             </div>
           </div>
+
+          {/* QR Section */}
+          {showQR && qrCode && (
+            <div className="mt-6 p-6 bg-white rounded-lg shadow text-center">
+              <h2 className="text-lg font-semibold mb-4">
+                Scan to Pay with Fonepay
+              </h2>
+
+              <img
+                src={qrCode}
+                alt="Fonepay QR"
+                className="mx-auto w-64 h-64"
+              />
+
+              <p className="mt-4 text-sm text-gray-500">
+                Open your Fonepay app and scan this QR
+              </p>
+            </div>
+          )}
 
         </div>
       )}
