@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-// Cart Context
+// Cart
 import { useCart } from "@/context/CartContext";
 
 // Icons
@@ -33,7 +33,7 @@ export default function Navbar() {
   const { cart } = useCart();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Firebase auth listener (safe)
+  // Firebase auth listener
   useEffect(() => {
     let isMounted = true;
 
@@ -50,7 +50,7 @@ export default function Navbar() {
     };
   }, []);
 
-  // Auto close menu on route change
+  // Close mobile menu on route change
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
@@ -71,14 +71,14 @@ export default function Navbar() {
 
   if (loading) {
     return (
-      <nav className="bg-[rgba(251,244,236,0.95)] h-20 flex items-center fixed top-0 left-0 w-full z-50 shadow">
-        <div className="px-6">Loading...</div>
+      <nav className="bg-[rgba(251,244,236,1)] h-20 flex items-center fixed top-0 left-0 w-full z-50 shadow-sm border-b border-[rgba(69,50,26,0.1)]">
+        <div className="px-6 text-[rgba(69,50,26,1)]">Loading...</div>
       </nav>
     );
   }
 
   return (
-    <nav className="bg-[rgba(251,244,236,0.95)] backdrop-blur-md shadow-lg h-20 flex items-center fixed top-0 left-0 w-full z-50">
+    <nav className="bg-[rgba(251,244,236,1)] shadow-sm border-b border-[rgba(69,50,26,0.1)] h-20 flex items-center fixed top-0 left-0 w-full z-50">
 
       <div className="flex justify-between items-center w-full px-6">
 
@@ -130,7 +130,7 @@ export default function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
-              className="flex items-center gap-2 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
+              className="flex items-center gap-2 bg-[rgba(178,60,47,1)] text-[rgba(251,244,236,1)] px-4 py-2 rounded-lg hover:opacity-90"
             >
               <Shield size={16} /> Admin
             </Link>
@@ -140,7 +140,7 @@ export default function Navbar() {
           {!user ? (
             <Link
               href="/login"
-              className="flex items-center gap-2 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
+              className="flex items-center gap-2 bg-[rgba(178,60,47,1)] text-[rgba(251,244,236,1)] px-4 py-2 rounded-lg hover:opacity-90"
             >
               <LogIn size={18} /> Login
             </Link>
@@ -165,22 +165,27 @@ export default function Navbar() {
 
         {/* Mobile Button */}
         <button
-          className="md:hidden text-2xl"
+          className="md:hidden text-[rgba(69,50,26,1)]"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
         >
-          {menuOpen ? <X /> : <MenuIcon />}
+          {menuOpen ? <X size={26} /> : <MenuIcon size={26} />}
         </button>
       </div>
 
-      {/* Mobile Menu (Improved UI) */}
+      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="absolute top-20 left-0 w-full bg-[rgba(69,50,26,1)] text-[rgba(251,244,236,1)] shadow-lg border-t border-white/10 md:hidden">
+        <div className="absolute top-20 left-0 w-full bg-[rgba(69,50,26,1)] text-[rgba(251,244,236,1)] shadow-lg md:hidden">
 
           <div className="flex flex-col p-5 space-y-4">
 
-            <Link href="/" className="hover:text-[rgba(178,60,47,1)]">Home</Link>
-            <Link href="/menu" className="hover:text-[rgba(178,60,47,1)]">Menu</Link>
+            <Link href="/" className="hover:text-[rgba(178,60,47,1)]">
+              Home
+            </Link>
+
+            <Link href="/menu" className="hover:text-[rgba(178,60,47,1)]">
+              Menu
+            </Link>
 
             <Link href="/cart" className="hover:text-[rgba(178,60,47,1)]">
               Cart ({cartCount})
@@ -197,12 +202,15 @@ export default function Navbar() {
                 <Link href="/admin" className="hover:text-[rgba(178,60,47,1)]">
                   Admin Dashboard
                 </Link>
+
                 <Link href="/admin/add-food" className="hover:text-[rgba(178,60,47,1)]">
                   Add Food
                 </Link>
+
                 <Link href="/admin/manage-food" className="hover:text-[rgba(178,60,47,1)]">
                   Manage Food
                 </Link>
+
                 <Link href="/admin/orders" className="hover:text-[rgba(178,60,47,1)]">
                   Orders
                 </Link>
@@ -210,7 +218,10 @@ export default function Navbar() {
             )}
 
             {!user ? (
-              <Link href="/login" className="text-[rgba(178,60,47,1)] font-semibold">
+              <Link
+                href="/login"
+                className="text-[rgba(178,60,47,1)] font-semibold"
+              >
                 Login
               </Link>
             ) : (
