@@ -22,12 +22,7 @@ export default function Profile() {
   const { user } = useAuth();
   const { addToCart } = useCart();
 
-  const [profile, setProfile] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    photoURL: "",
-  });
+  const [profile, setProfile] = useState({ name: "", phone: "", address: "", photoURL: "" });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,17 +31,16 @@ export default function Profile() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  // Theme colors
   const colors = {
-    primary: "rgba(178, 60, 47, 1)",
-    bg: "rgba(251, 244, 236, 1)",
-    card: "rgba(69, 50, 26, 1)",
+    primary: "rgba(178,60,47,1)",
+    card: "rgba(69,50,26,1)",
+    bg: "rgba(251,244,236,1)",
     text: "rgba(251,244,236,1)",
   };
 
   const statusSteps = ["Pending", "Cooking", "Out for delivery", "Delivered"];
 
-  // Fetch profile & orders
+  // Fetch profile and live orders
   useEffect(() => {
     if (!user) return;
 
@@ -60,18 +54,12 @@ export default function Profile() {
       }
       setLoading(false);
     };
-
     fetchProfile();
 
     const q = query(collection(db, "orders"), where("userId", "==", user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const ordersData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      ordersData.sort(
-        (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
-      );
+      const ordersData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      ordersData.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setOrders(ordersData);
       setOrdersLoading(false);
     });
@@ -79,13 +67,11 @@ export default function Profile() {
     return () => unsubscribe();
   }, [user]);
 
-  // Upload image to Cloudinary
   const uploadToCloudinary = async () => {
     if (!image) return profile.photoURL;
     const formData = new FormData();
     formData.append("file", image);
     formData.append("upload_preset", "foodallpur");
-
     const res = await axios.post(
       "https://api.cloudinary.com/v1_1/dawgv2iso/image/upload",
       formData
@@ -103,11 +89,7 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     const imageUrl = await uploadToCloudinary();
-    await setDoc(doc(db, "users", user.uid), {
-      ...profile,
-      photoURL: imageUrl,
-      email: user.email,
-    });
+    await setDoc(doc(db, "users", user.uid), { ...profile, photoURL: imageUrl, email: user.email });
     setMessage("✅ Profile updated!");
     setSaving(false);
   };
@@ -126,28 +108,19 @@ export default function Profile() {
     alert("❌ Order cancelled");
   };
 
-  // Order progress bar
   const renderTracking = (status) => {
     const currentStep = statusSteps.indexOf(status);
     return (
       <div className="mt-2">
         <div className="flex justify-between text-xs mb-1" style={{ color: colors.text }}>
-          {statusSteps.map((s) => (
-            <span key={s}>{s}</span>
-          ))}
+          {statusSteps.map((s) => <span key={s}>{s}</span>)}
         </div>
         <div className="flex items-center gap-1">
           {statusSteps.map((step, i) => (
             <div key={i} className="flex-1 flex items-center">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: i <= currentStep ? colors.primary : "#888" }}
-              />
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: i <= currentStep ? colors.primary : "#888" }}/>
               {i !== statusSteps.length - 1 && (
-                <div
-                  className="flex-1 h-1"
-                  style={{ backgroundColor: i < currentStep ? colors.primary : "#888" }}
-                />
+                <div className="flex-1 h-1" style={{ backgroundColor: i < currentStep ? colors.primary : "#888" }}/>
               )}
             </div>
           ))}
@@ -156,62 +129,48 @@ export default function Profile() {
     );
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-  };
+  const handleLogout = async () => { await signOut(auth); };
 
   if (loading) return <p className="text-center mt-20">Loading...</p>;
 
   return (
     <ProtectedRoute>
       <main className="min-h-screen flex justify-center px-6 py-10" style={{ backgroundColor: colors.bg }}>
-        <div className="w-full max-w-3xl p-6 rounded-xl shadow-lg space-y-8" style={{ backgroundColor: colors.card }}>
-          {/* Profile */}
-          <h1 className="text-2xl font-bold text-center" style={{ color: colors.text }}>
-            My Profile 👤
-          </h1>
+        <div className="w-full max-w-3xl p-6 rounded-xl shadow-lg space-y-6" style={{ backgroundColor: colors.card }}>
+          <h1 className="text-2xl font-bold text-center" style={{ color: colors.text }}>My Profile 👤</h1>
+          {message && <p className="text-center" style={{ color: colors.text }}>{message}</p>}
 
-          {message && <p className="text-center">{message}</p>}
-
+          {/* Profile image */}
           <div className="flex flex-col items-center">
-            <img
-              src={preview || "https://via.placeholder.com/100"}
-              className="w-24 h-24 rounded-full object-cover"
-            />
-            <input type="file" onChange={handleImageChange} className="text-white mt-2"/>
+            <img src={preview || "https://via.placeholder.com/100"} className="w-24 h-24 rounded-full object-cover" />
+            <input type="file" onChange={handleImageChange} className="mt-2 p-2 rounded w-full" style={{ border: `1px solid ${colors.primary}`, backgroundColor: colors.bg, color: colors.card }}/>
           </div>
 
+          {/* Profile inputs */}
           <input
-            value={profile.name}
-            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+            value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })}
             placeholder="Name"
             className="w-full p-3 rounded"
+            style={{ backgroundColor: colors.bg, color: colors.card, border: `1px solid ${colors.primary}` }}
           />
           <input
-            value={profile.phone}
-            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+            value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
             placeholder="Phone"
             className="w-full p-3 rounded"
+            style={{ backgroundColor: colors.bg, color: colors.card, border: `1px solid ${colors.primary}` }}
           />
           <textarea
-            value={profile.address}
-            onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+            value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })}
             placeholder="Address"
             className="w-full p-3 rounded"
+            style={{ backgroundColor: colors.bg, color: colors.card, border: `1px solid ${colors.primary}` }}
           />
 
           <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              className="flex-1 py-3 rounded text-white"
-              style={{ backgroundColor: colors.primary }}
-            >
+            <button onClick={handleSave} className="flex-1 py-3 rounded text-white" style={{ backgroundColor: colors.primary }}>
               {saving ? "Saving..." : "Save"}
             </button>
-            <button
-              onClick={handleLogout}
-              className="flex-1 py-3 rounded border text-white"
-            >
+            <button onClick={handleLogout} className="flex-1 py-3 rounded border text-white" style={{ borderColor: colors.primary }}>
               Logout
             </button>
           </div>
@@ -226,7 +185,7 @@ export default function Profile() {
             orders.map((order) => (
               <div key={order.id} className="p-4 rounded border mb-4" style={{ borderColor: colors.primary }}>
                 <div className="flex justify-between mb-2">
-                  <span style={{ color: colors.text }}>#{order.id.slice(0, 6)}</span>
+                  <span style={{ color: colors.text }}>#{order.id.slice(0,6)}</span>
                   <span style={{ color: colors.text }}>{order.status}</span>
                 </div>
 
@@ -237,22 +196,13 @@ export default function Profile() {
                 ))}
 
                 <p style={{ color: colors.text }} className="font-semibold">Rs. {order.total}</p>
-
                 {renderTracking(order.status)}
 
                 <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => handleReorder(order.items)}
-                    className="px-3 py-2 rounded text-sm text-white"
-                    style={{ backgroundColor: colors.primary }}
-                  >
+                  <button onClick={() => handleReorder(order.items)} className="px-3 py-2 rounded text-white" style={{ backgroundColor: colors.primary }}>
                     🔁 Reorder
                   </button>
-                  <button
-                    onClick={() => handleCancel(order.id, order.status)}
-                    className="px-3 py-2 rounded text-sm text-white"
-                    style={{ backgroundColor: "#444" }}
-                  >
+                  <button onClick={() => handleCancel(order.id, order.status)} className="px-3 py-2 rounded text-white" style={{ backgroundColor: "#444" }}>
                     ❌ Cancel
                   </button>
                 </div>

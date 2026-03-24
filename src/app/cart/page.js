@@ -15,9 +15,14 @@ export default function CartPage() {
 
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-
   const [qrCode, setQrCode] = useState(null);
   const [showQR, setShowQR] = useState(false);
+
+  const colors = {
+    primary: "rgba(178,60,47,1)",
+    bg: "rgba(251,244,236,1)",
+    dark: "rgba(69,50,26,1)",
+  };
 
   // ✅ Calculate total
   useEffect(() => {
@@ -29,13 +34,15 @@ export default function CartPage() {
           ? item.halfPrice || item.price / 2
           : item.fullPrice || item.price;
 
-      sum += price * item.quantity;
+      const qty = item.quantity || 1;
+
+      sum += price * qty;
     });
 
     setTotal(sum);
   }, [cart]);
 
-  // ✅ Payment handler (QR)
+  // ✅ Payment handler
   const handlePayment = async () => {
     try {
       if (cart.length === 0) {
@@ -45,7 +52,6 @@ export default function CartPage() {
 
       setLoading(true);
 
-      // 1. Create order
       const order = {
         items: cart,
         total,
@@ -61,13 +67,10 @@ export default function CartPage() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || "Order failed");
-      }
+      if (!res.ok) throw new Error(data.message || "Order failed");
 
       const orderId = data.orderId;
 
-      // 2. Generate QR
       const paymentRes = await fetch("/api/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,75 +98,97 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[rgba(251,244,236,1)] pt-24 px-6">
-      <h1 className="text-2xl font-bold text-[rgba(178,60,47,1)] mb-6">
+    <div
+      className="min-h-screen pt-24 px-6"
+      style={{ backgroundColor: colors.bg }}
+    >
+      <h1
+        className="text-2xl font-bold mb-6"
+        style={{ color: colors.primary }}
+      >
         Your Cart
       </h1>
 
       {cart.length === 0 ? (
-        <p className="text-[rgba(69,50,26,1)]">Your cart is empty.</p>
+        <p style={{ color: colors.dark }}>Your cart is empty.</p>
       ) : (
         <div className="space-y-4">
 
+          {/* CART ITEMS */}
           {cart.map((item) => {
             const price =
               item.type === "half"
                 ? item.halfPrice || item.price / 2
                 : item.fullPrice || item.price;
 
+            const qty = item.quantity || 1;
+            const itemTotal = price * qty;
+
             return (
               <div
                 key={item.id}
-                className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center"
+                className="p-4 rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center"
+                style={{ backgroundColor: "white" }}
               >
-                {/* Info */}
+                {/* INFO */}
                 <div>
-                  <h2 className="font-semibold text-[rgba(69,50,26,1)]">
+                  <h2
+                    className="font-semibold"
+                    style={{ color: colors.dark }}
+                  >
                     {item.name}
                   </h2>
 
                   <p className="text-sm text-gray-500">
-                    Price: Rs {price}
+                    Price: Rs {price} × {qty} = Rs {itemTotal}
+                  </p>
+
+                  <p className="text-xs mt-1 text-gray-400 capitalize">
+                    Type: {item.type}
                   </p>
                 </div>
 
-                {/* Controls */}
+                {/* CONTROLS */}
                 <div className="flex flex-col md:flex-row gap-3 mt-3 md:mt-0 md:items-center">
 
-                  {/* Quantity */}
+                  {/* QUANTITY */}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => decreaseQty(item.id)}
-                      className="px-2 py-1 bg-gray-200 rounded"
+                      className="px-3 py-1 rounded text-white"
+                      style={{ backgroundColor: colors.dark }}
                     >
                       -
                     </button>
 
-                    <span>{item.quantity}</span>
+                    <span style={{ color: colors.dark }}>
+                      {qty}
+                    </span>
 
                     <button
                       onClick={() => increaseQty(item.id)}
-                      className="px-2 py-1 bg-gray-200 rounded"
+                      className="px-3 py-1 rounded text-white"
+                      style={{ backgroundColor: colors.dark }}
                     >
                       +
                     </button>
                   </div>
 
-                  {/* Half / Full */}
+                  {/* HALF / FULL */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => updateItemType(item.id, "half")}
-                      className="px-3 py-1 rounded border text-sm"
+                      className="px-3 py-1 rounded text-sm border"
                       style={{
                         backgroundColor:
                           item.type === "half"
-                            ? "rgba(178,60,47,1)"
-                            : "rgba(251,244,236,1)",
+                            ? colors.primary
+                            : "transparent",
                         color:
                           item.type === "half"
                             ? "white"
-                            : "rgba(69,50,26,1)",
-                        borderColor: "rgba(178,60,47,1)",
+                            : colors.dark,
+                        borderColor: colors.primary,
                       }}
                     >
                       Half
@@ -171,27 +196,28 @@ export default function CartPage() {
 
                     <button
                       onClick={() => updateItemType(item.id, "full")}
-                      className="px-3 py-1 rounded border text-sm"
+                      className="px-3 py-1 rounded text-sm border"
                       style={{
                         backgroundColor:
                           item.type === "full"
-                            ? "rgba(178,60,47,1)"
-                            : "rgba(251,244,236,1)",
+                            ? colors.primary
+                            : "transparent",
                         color:
                           item.type === "full"
                             ? "white"
-                            : "rgba(69,50,26,1)",
-                        borderColor: "rgba(178,60,47,1)",
+                            : colors.dark,
+                        borderColor: colors.primary,
                       }}
                     >
                       Full
                     </button>
                   </div>
 
-                  {/* Remove */}
+                  {/* REMOVE */}
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="px-3 py-1 rounded bg-red-500 text-white text-sm"
+                    className="px-3 py-1 rounded text-white text-sm"
+                    style={{ backgroundColor: "red" }}
                   >
                     Remove
                   </button>
@@ -200,17 +226,26 @@ export default function CartPage() {
             );
           })}
 
-          {/* Total + Payment */}
-          <div className="mt-6 p-4 bg-white rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center gap-4">
-            
-            <h2 className="text-lg font-semibold text-[rgba(69,50,26,1)]">
+          {/* TOTAL + ACTIONS */}
+          <div
+            className="mt-6 p-4 rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center gap-4"
+            style={{ backgroundColor: "white" }}
+          >
+            <h2
+              className="text-lg font-semibold"
+              style={{ color: colors.dark }}
+            >
               Total: Rs {total}
             </h2>
 
             <div className="flex gap-3">
               <button
                 onClick={clearCart}
-                className="px-4 py-2 bg-gray-300 rounded-lg"
+                className="px-4 py-2 rounded-lg"
+                style={{
+                  backgroundColor: "#ccc",
+                  color: colors.dark,
+                }}
               >
                 Clear Cart
               </button>
@@ -218,32 +253,35 @@ export default function CartPage() {
               <button
                 onClick={handlePayment}
                 disabled={loading}
-                className="bg-[rgba(178,60,47,1)] text-white px-6 py-2 rounded-lg disabled:opacity-50"
+                className="px-6 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{ backgroundColor: colors.primary }}
               >
                 {loading ? "Processing..." : "Pay Now"}
               </button>
             </div>
           </div>
 
-          {/* QR Section */}
+          {/* QR CODE */}
           {showQR && qrCode && (
             <div className="mt-6 p-6 bg-white rounded-lg shadow text-center">
-              <h2 className="text-lg font-semibold mb-4">
-                Scan to Pay with Fonepay
+              <h2
+                className="text-lg font-semibold mb-4"
+                style={{ color: colors.dark }}
+              >
+                Scan to Pay
               </h2>
 
               <img
                 src={qrCode}
-                alt="Fonepay QR"
+                alt="QR Code"
                 className="mx-auto w-64 h-64"
               />
 
               <p className="mt-4 text-sm text-gray-500">
-                Open your Fonepay app and scan this QR
+                Open your payment app and scan this QR
               </p>
             </div>
           )}
-
         </div>
       )}
     </div>
