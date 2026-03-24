@@ -12,9 +12,9 @@ export const metadata = {
 
   // ✅ Logo / favicon setup
   icons: {
-    icon: "/logo1.jpeg",
-    shortcut: "/logo1.jpeg",
-    apple: "/logo1.jpeg",
+    icon: "/logo1.ico",
+    shortcut: "/logo1.png",
+    apple: "/logo1.png",
   },
 };
 

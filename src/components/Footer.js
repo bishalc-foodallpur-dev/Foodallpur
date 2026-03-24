@@ -1,88 +1,78 @@
 "use client";
 
-import Link from "next/link";
-import { Facebook, Instagram, Phone, Mail } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Music2 } from "lucide-react";
 
 export default function Footer() {
   const colors = {
     primary: "rgba(178, 60, 47, 1)",
-    bgDark: "rgba(69, 50, 26, 1)",
-    textLight: "rgba(251,244,236,1)",
+    bg: "rgba(251, 244, 236, 1)",
+    textDark: "rgba(69, 50, 26, 1)",
+    border: "rgba(69, 50, 26, 0.2)",
   };
 
   return (
-    <footer style={{ backgroundColor: colors.bgDark }} className="text-white mt-16">
+    <footer style={{ backgroundColor: colors.bg }} className="mt-12">
 
-      <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* MAIN CONTENT */}
+      <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
 
         {/* BRAND */}
-        <div>
-          <h2 className="text-2xl font-bold mb-3" style={{ color: colors.textLight }}>
+        <div className="text-center md:text-left">
+          <h2
+            className="text-xl font-bold"
+            style={{ color: colors.primary }}
+          >
             FoodAllpur 🍽️
           </h2>
-          <p className="text-sm opacity-80">
-            Order fresh meals and enjoy hot, tasty food at your doorstep with just a few clicks.
+          <p className="text-sm opacity-80" style={{ color: colors.textDark }}>
+            Fresh meals delivered fast to your doorstep.
           </p>
         </div>
 
-        {/* LINKS */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Quick Links</h3>
+        {/* SOCIAL ICONS */}
+        <div className="flex gap-5">
+          <a href="#" className="hover:text-[rgba(178,60,47,1)] transition" style={{ color: colors.textDark }}>
+            <Facebook size={22} />
+          </a>
 
-          <ul className="space-y-2 text-sm">
-            <li>
-              <Link href="/" className="hover:text-[rgba(178,60,47,1)] transition">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link href="/menu" className="hover:text-[rgba(178,60,47,1)] transition">
-                Menu
-              </Link>
-            </li>
-            <li>
-              <Link href="/cart" className="hover:text-[rgba(178,60,47,1)] transition">
-                Cart
-              </Link>
-            </li>
-            <li>
-              <Link href="/login" className="hover:text-[rgba(178,60,47,1)] transition">
-                Login
-              </Link>
-            </li>
-          </ul>
-        </div>
+          <a href="#" className="hover:text-[rgba(178,60,47,1)] transition" style={{ color: colors.textDark }}>
+            <Instagram size={22} />
+          </a>
 
-        {/* CONTACT */}
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Contact</h3>
+          <a
+            href="https://www.linkedin.com/in/bishal-chaudhary-b20b66395"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[rgba(178,60,47,1)] transition"
+            style={{ color: colors.textDark }}
+          >
+            <Linkedin size={22} />
+          </a>
 
-          <div className="flex items-center gap-2 text-sm mb-2">
-            <Phone size={16} />
-            <span>+977 9800000000</span>
-          </div>
-
-          <div className="flex items-center gap-2 text-sm mb-2">
-            <Mail size={16} />
-            <span>support@foodallpur.com</span>
-          </div>
-
-          {/* SOCIAL */}
-          <div className="flex gap-4 mt-4">
-            <a href="#" className="hover:text-[rgba(178,60,47,1)] transition">
-              <Facebook />
-            </a>
-            <a href="#" className="hover:text-[rgba(178,60,47,1)] transition">
-              <Instagram />
-            </a>
-          </div>
+          <a href="#" className="hover:text-[rgba(178,60,47,1)] transition" style={{ color: colors.textDark }}>
+            <Music2 size={22} /> {/* TikTok alternative icon */}
+          </a>
         </div>
 
       </div>
 
       {/* BOTTOM BAR */}
-      <div className="border-t border-white/20 text-center py-4 text-sm opacity-70">
-        © {new Date().getFullYear()} FoodAllpur. All rights reserved.
+      <div
+        className="border-t text-center py-4 text-sm"
+        style={{
+          borderColor: colors.border,
+          color: colors.textDark,
+        }}
+      >
+        © {new Date().getFullYear()} FoodAllpur | Site by{" "}
+        <a
+          href="https://www.linkedin.com/in/bishal-chaudhary-b20b66395"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-[rgba(178,60,47,1)] transition"
+        >
+          Bishal Chaudhary
+        </a>
       </div>
 
     </footer>
