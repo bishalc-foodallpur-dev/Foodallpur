@@ -1,198 +1,236 @@
 "use client";
 
-import { useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { db, auth } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 export default function CartPage() {
-  const { cart, increaseQty, decreaseQty, clearCart } = useCart();
+  const {
+    cart,
+    removeFromCart,
+    updateItemType,
+    increaseQty,
+    decreaseQty,
+    clearCart,
+  } = useCart();
+
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Add default type if not present
-  const cartWithType = cart.map((item) => ({
-    ...item,
-    type: item.type || "full", // default full
-  }));
+  // Calculate total
+  useEffect(() => {
+    let sum = 0;
 
-  // Price logic (half = 60% of full price, you can adjust)
-  const getItemPrice = (item) => {
-    if (item.type === "half") {
-      return item.price * 0.6;
-    }
-    return item.price;
-  };
+    cart.forEach((item) => {
+      const price =
+        item.type === "half"
+          ? item.halfPrice || item.price / 2
+          : item.fullPrice || item.price;
 
-  const total = cartWithType.reduce((sum, item) => {
-    return sum + getItemPrice(item) * item.quantity;
-  }, 0);
+      sum += price * item.quantity;
+    });
 
-  const updateType = (itemId, type) => {
-    const updatedCart = cart.map((item) =>
-      item.id === itemId ? { ...item, type } : item
-    );
+    setTotal(sum);
+  }, [cart]);
 
-    // Update cart manually (if your context supports it, better to expose setter)
-    // fallback: reload workaround if needed
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
-    window.location.reload();
-  };
-
-  const handleCheckout = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
-      alert("Please login first");
-      return;
-    }
-
-    if (cart.length === 0) {
-      alert("Cart is empty");
-      return;
-    }
-
-    setLoading(true);
-
+  // ✅ Direct Payment Handler
+  const handlePayment = async () => {
     try {
-      await addDoc(collection(db, "orders"), {
-        userId: user.uid,
-        email: user.email,
-        items: cartWithType,
+      if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+      }
+
+      setLoading(true);
+
+      const order = {
+        items: cart,
         total,
+        createdAt: new Date().toISOString(),
         status: "pending",
-        createdAt: new Date(),
+      };
+
+      // ✅ STEP 1: Save order to backend
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(order),
       });
 
-      alert("✅ Order placed successfully!");
-      clearCart();
-    } catch (error) {
-      console.error(error);
-      alert("❌ Failed to place order");
-    }
+      const data = await res.json();
 
-    setLoading(false);
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create order");
+      }
+
+      const orderId = data.orderId;
+
+      // ✅ STEP 2: Initiate payment
+      const paymentRes = await fetch("/api/payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: total,
+          orderId,
+        }),
+      });
+
+      const paymentData = await paymentRes.json();
+
+      if (!paymentRes.ok) {
+        throw new Error(paymentData.message || "Payment init failed");
+      }
+
+      // ✅ STEP 3: Redirect to payment gateway
+      if (paymentData.paymentUrl) {
+        window.location.href = paymentData.paymentUrl;
+      } else {
+        alert("Payment URL not received");
+      }
+
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert(error.message || "Payment failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div
-      className="min-h-screen pt-24 p-6"
-      style={{ backgroundColor: "rgba(251,244,236,1)" }}
-    >
-      <h1
-        className="text-3xl font-bold text-center mb-6"
-        style={{ color: "rgba(178,60,47,1)" }}
-      >
-        Cart 🛒
+    <div className="min-h-screen bg-[rgba(251,244,236,1)] pt-24 px-6">
+      <h1 className="text-2xl font-bold text-[rgba(178,60,47,1)] mb-6">
+        Your Cart
       </h1>
 
-      <div className="max-w-3xl mx-auto space-y-4">
+      {cart.length === 0 ? (
+        <p className="text-[rgba(69,50,26,1)]">Your cart is empty.</p>
+      ) : (
+        <div className="space-y-4">
 
-        {/* Empty Cart */}
-        {cart.length === 0 ? (
-          <div className="bg-white p-6 rounded-lg shadow text-center">
-            <p className="text-gray-500">Your cart is empty</p>
-          </div>
-        ) : (
-          cartWithType.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white p-4 rounded-lg shadow flex justify-between items-center hover:shadow-md transition"
-            >
-              <div className="w-full">
+          {cart.map((item) => {
+            const price =
+              item.type === "half"
+                ? item.halfPrice || item.price / 2
+                : item.fullPrice || item.price;
 
-                {/* Name */}
-                <h2
-                  className="font-semibold"
-                  style={{ color: "rgba(69, 50, 26, 1)" }}
-                >
-                  {item.name}
-                </h2>
+            return (
+              <div
+                key={item.id}
+                className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between md:items-center"
+              >
+                {/* Info */}
+                <div>
+                  <h2 className="font-semibold text-[rgba(69,50,26,1)]">
+                    {item.name}
+                  </h2>
 
-                {/* Price */}
-                <p className="text-sm">
-                  Price:{" "}
-                  <span style={{ color: "rgba(178,60,47,1)" }}>
-                    Rs. {getItemPrice(item).toFixed(2)}
-                  </span>
-                </p>
-
-                {/* Half / Full Toggle */}
-                <div className="flex space-x-2 mt-2">
-                  <button
-                    onClick={() => updateType(item.id, "half")}
-                    className={`px-3 py-1 rounded text-sm border ${
-                      item.type === "half"
-                        ? "bg-[rgba(178,60,47,1)] text-white"
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    Half
-                  </button>
-
-                  <button
-                    onClick={() => updateType(item.id, "full")}
-                    className={`px-3 py-1 rounded text-sm border ${
-                      item.type === "full"
-                        ? "bg-[rgba(178,60,47,1)] text-white"
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    Full
-                  </button>
+                  <p className="text-sm text-gray-500">
+                    Price: Rs {price}
+                  </p>
                 </div>
 
-                {/* Quantity Controls */}
-                <div className="flex items-center space-x-2 mt-3">
-                  <button
-                    onClick={() => decreaseQty(item.id)}
-                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    -
-                  </button>
+                {/* Controls */}
+                <div className="flex flex-col md:flex-row gap-3 mt-3 md:mt-0 md:items-center">
 
-                  <span className="font-medium">{item.quantity}</span>
+                  {/* Quantity */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => decreaseQty(item.id)}
+                      className="px-2 py-1 bg-gray-200 rounded"
+                    >
+                      -
+                    </button>
 
+                    <span>{item.quantity}</span>
+
+                    <button
+                      onClick={() => increaseQty(item.id)}
+                      className="px-2 py-1 bg-gray-200 rounded"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Half / Full */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updateItemType(item.id, "half")}
+                      className="px-3 py-1 rounded border text-sm"
+                      style={{
+                        backgroundColor:
+                          item.type === "half"
+                            ? "rgba(178,60,47,1)"
+                            : "rgba(251,244,236,1)",
+                        color:
+                          item.type === "half"
+                            ? "white"
+                            : "rgba(69,50,26,1)",
+                        borderColor: "rgba(178,60,47,1)",
+                      }}
+                    >
+                      Half
+                    </button>
+
+                    <button
+                      onClick={() => updateItemType(item.id, "full")}
+                      className="px-3 py-1 rounded border text-sm"
+                      style={{
+                        backgroundColor:
+                          item.type === "full"
+                            ? "rgba(178,60,47,1)"
+                            : "rgba(251,244,236,1)",
+                        color:
+                          item.type === "full"
+                            ? "white"
+                            : "rgba(69,50,26,1)",
+                        borderColor: "rgba(178,60,47,1)",
+                      }}
+                    >
+                      Full
+                    </button>
+                  </div>
+
+                  {/* Remove */}
                   <button
-                    onClick={() => increaseQty(item.id)}
-                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    onClick={() => removeFromCart(item.id)}
+                    className="px-3 py-1 rounded bg-red-500 text-white text-sm"
                   >
-                    +
+                    Remove
                   </button>
                 </div>
               </div>
+            );
+          })}
 
-              {/* Image */}
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-16 h-16 object-cover rounded ml-4"
-              />
+          {/* Total + Payment */}
+          <div className="mt-6 p-4 bg-white rounded-lg shadow flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-[rgba(69,50,26,1)]">
+              Total: Rs {total}
+            </h2>
+
+            <div className="flex gap-3">
+              <button
+                onClick={clearCart}
+                className="px-4 py-2 bg-gray-300 rounded-lg"
+              >
+                Clear Cart
+              </button>
+
+              <button
+                onClick={handlePayment}
+                disabled={loading}
+                className="bg-[rgba(178,60,47,1)] text-white px-6 py-2 rounded-lg disabled:opacity-50"
+              >
+                {loading ? "Processing..." : "Pay Now"}
+              </button>
             </div>
-          ))
-        )}
-
-        {/* Total */}
-        {cart.length > 0 && (
-          <div className="text-right font-bold text-lg">
-            Total:{" "}
-            <span style={{ color: "rgba(178,60,47,1)" }}>
-              Rs. {total.toFixed(2)}
-            </span>
           </div>
-        )}
 
-        {/* Checkout */}
-        {cart.length > 0 && (
-          <button
-            onClick={handleCheckout}
-            disabled={loading}
-            className="w-full text-white py-3 rounded-lg font-semibold transition disabled:opacity-50"
-            style={{ backgroundColor: "rgba(178,60,47,1)" }}
-          >
-            {loading ? "Processing..." : "Checkout"}
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

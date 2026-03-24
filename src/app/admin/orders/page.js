@@ -6,7 +6,7 @@ import {
   collection,
   onSnapshot,
   updateDoc,
-  doc
+  doc,
 } from "firebase/firestore";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -19,6 +19,8 @@ export default function Orders() {
     primary: "rgba(178, 60, 47, 1)",
     background: "rgba(251, 244, 236, 1)",
     text: "rgba(69, 50, 26, 1)",
+    card: "rgba(69, 50, 26, 1)",
+    cream: "rgba(251, 244, 236, 1)",
   };
 
   useEffect(() => {
@@ -37,7 +39,6 @@ export default function Orders() {
     await updateDoc(doc(db, "orders", id), { status });
   };
 
-  // Status color helper
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -47,7 +48,7 @@ export default function Orders() {
       case "delivered":
         return "bg-green-600";
       default:
-        return "bg-gray-400";
+        return "bg-gray-500";
     }
   };
 
@@ -55,94 +56,113 @@ export default function Orders() {
     <ProtectedRoute adminOnly={true}>
       <AdminLayout>
 
-        <h1
-          className="text-2xl font-bold mb-6"
-          style={{ color: colors.primary }}
-        >
-          Orders 📦
-        </h1>
+        <div className="min-h-screen p-6 bg-[rgba(251,244,236,1)]">
 
-        <div className="space-y-4">
+          {/* TITLE */}
+          <h1
+            className="text-2xl font-bold mb-6"
+            style={{ color: colors.primary }}
+          >
+            Orders 📦
+          </h1>
 
-          {orders.length === 0 ? (
-            <p style={{ color: colors.text }}>
-              No orders found
-            </p>
-          ) : (
-            orders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-white p-5 shadow rounded border"
-                style={{ borderColor: colors.primary + "20" }}
-              >
+          <div className="space-y-4">
 
-                {/* User Info */}
-                <p style={{ color: colors.text }}>
-                  <strong>User:</strong> {order.userEmail}
-                </p>
+            {orders.length === 0 ? (
+              <p style={{ color: colors.text }}>
+                No orders found
+              </p>
+            ) : (
+              orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="p-5 rounded-xl shadow-md hover:shadow-xl transition border"
+                  style={{
+                    backgroundColor: colors.card,
+                    borderColor: "rgba(251,244,236,0.2)",
+                  }}
+                >
 
-                <p style={{ color: colors.text }}>
-                  <strong>Total:</strong> Rs {order.total}
-                </p>
+                  {/* USER INFO */}
+                  <p style={{ color: colors.cream }}>
+                    <strong>User:</strong> {order.email}
+                  </p>
 
-                {/* Status Badge */}
-                <p className="mt-2">
-                  <span
-                    className={`px-3 py-1 rounded text-white text-sm ${getStatusColor(
-                      order.status
-                    )}`}
-                  >
-                    {order.status}
-                  </span>
-                </p>
+                  <p style={{ color: colors.cream }}>
+                    <strong>Total:</strong> Rs {order.total}
+                  </p>
 
-                {/* Items */}
-                {order.items && (
-                  <div className="mt-3">
-                    <p className="font-semibold">Items:</p>
-                    <ul className="list-disc ml-5 text-sm">
-                      {order.items.map((item, index) => (
-                        <li key={index}>
-                          {item.name} ({item.selectedSize}) x {item.quantity || 1}
-                        </li>
-                      ))}
-                    </ul>
+                  {/* STATUS */}
+                  <div className="mt-2">
+                    <span
+                      className={`px-3 py-1 rounded text-white text-sm ${getStatusColor(
+                        order.status
+                      )}`}
+                    >
+                      {order.status}
+                    </span>
                   </div>
-                )}
 
-                {/* Actions */}
-                <div className="flex flex-wrap gap-2 mt-4">
+                  {/* ITEMS */}
+                  {order.items && (
+                    <div className="mt-3">
+                      <p className="font-semibold text-[rgba(251,244,236,1)]">
+                        Items:
+                      </p>
+                      <ul className="list-disc ml-5 text-sm text-[rgba(251,244,236,0.85)]">
+                        {order.items.map((item, index) => (
+                          <li key={index}>
+                            {item.name} ({item.type || "full"}) ×{" "}
+                            {item.quantity || 1}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-                  <button
-                    onClick={() => updateStatus(order.id, "pending")}
-                    className="px-3 py-1 rounded text-white"
-                    style={{ backgroundColor: "#f59e0b" }}
-                  >
-                    Pending
-                  </button>
+                  {/* ACTION BUTTONS */}
+                  <div className="flex flex-wrap gap-2 mt-4">
 
-                  <button
-                    onClick={() => updateStatus(order.id, "processing")}
-                    className="px-3 py-1 rounded text-white"
-                    style={{ backgroundColor: "#3b82f6" }}
-                  >
-                    Processing
-                  </button>
+                    <button
+                      onClick={() => updateStatus(order.id, "pending")}
+                      className="px-3 py-1 rounded text-sm font-medium transition hover:scale-105"
+                      style={{
+                        backgroundColor: "#f59e0b",
+                        color: "white",
+                      }}
+                    >
+                      Pending
+                    </button>
 
-                  <button
-                    onClick={() => updateStatus(order.id, "delivered")}
-                    className="px-3 py-1 rounded text-white"
-                    style={{ backgroundColor: "#16a34a" }}
-                  >
-                    Delivered
-                  </button>
+                    <button
+                      onClick={() => updateStatus(order.id, "processing")}
+                      className="px-3 py-1 rounded text-sm font-medium transition hover:scale-105"
+                      style={{
+                        backgroundColor: "#3b82f6",
+                        color: "white",
+                      }}
+                    >
+                      Processing
+                    </button>
+
+                    <button
+                      onClick={() => updateStatus(order.id, "delivered")}
+                      className="px-3 py-1 rounded text-sm font-medium transition hover:scale-105"
+                      style={{
+                        backgroundColor: "#16a34a",
+                        color: "white",
+                      }}
+                    >
+                      Delivered
+                    </button>
+
+                  </div>
 
                 </div>
+              ))
+            )}
 
-              </div>
-            ))
-          )}
-
+          </div>
         </div>
 
       </AdminLayout>

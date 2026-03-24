@@ -70,12 +70,16 @@ export default function AddFood() {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[rgba(251,244,236,1)]">
 
-      {/* THEMED SECTION */}
+      {/* CARD */}
       <div
-        className="w-full max-w-xl p-6 rounded-xl shadow-lg"
-        style={{ backgroundColor: "rgba(69, 50, 26, 1)" }}
+        className="w-full max-w-xl p-6 rounded-xl shadow-md hover:shadow-xl transition border"
+        style={{
+          backgroundColor: "rgba(69,50,26,1)",
+          borderColor: "rgba(251,244,236,0.2)",
+        }}
       >
 
+        {/* TITLE */}
         <h2
           className="text-2xl font-bold mb-6 text-center"
           style={{ color: "rgba(251,244,236,1)" }}
@@ -85,54 +89,63 @@ export default function AddFood() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
+          {/* NAME */}
           <input
             type="text"
             placeholder="Food Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full p-3 rounded bg-transparent"
+            className="w-full p-3 rounded outline-none transition focus:ring-2"
             style={{
-              border: "1px solid rgba(251,244,236,1)",
+              backgroundColor: "transparent",
+              border: "1px solid rgba(251,244,236,0.4)",
               color: "rgba(251,244,236,1)",
             }}
           />
 
+          {/* FULL PRICE */}
           <input
             type="number"
             placeholder="Full Price (Rs.)"
             value={fullPrice}
             onChange={(e) => setFullPrice(e.target.value)}
-            className="w-full p-3 rounded bg-transparent"
+            className="w-full p-3 rounded outline-none transition focus:ring-2"
             style={{
-              border: "1px solid rgba(251,244,236,1)",
+              backgroundColor: "transparent",
+              border: "1px solid rgba(251,244,236,0.4)",
               color: "rgba(251,244,236,1)",
             }}
           />
 
+          {/* HALF PRICE */}
           <input
             type="number"
             placeholder="Half Price (Rs.)"
             value={halfPrice}
             onChange={(e) => setHalfPrice(e.target.value)}
-            className="w-full p-3 rounded bg-transparent"
+            className="w-full p-3 rounded outline-none transition focus:ring-2"
             style={{
-              border: "1px solid rgba(251,244,236,1)",
+              backgroundColor: "transparent",
+              border: "1px solid rgba(251,244,236,0.4)",
               color: "rgba(251,244,236,1)",
             }}
           />
 
+          {/* CATEGORY */}
           <input
             type="text"
-            placeholder="Category"
+            placeholder="Category (e.g. pizza, burger)"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-3 rounded bg-transparent"
+            className="w-full p-3 rounded outline-none transition focus:ring-2"
             style={{
-              border: "1px solid rgba(251,244,236,1)",
+              backgroundColor: "transparent",
+              border: "1px solid rgba(251,244,236,0.4)",
               color: "rgba(251,244,236,1)",
             }}
           />
 
+          {/* IMAGE */}
           <input
             type="file"
             accept="image/*"
@@ -141,20 +154,21 @@ export default function AddFood() {
             style={{ color: "rgba(251,244,236,1)" }}
           />
 
-          {/* Preview */}
+          {/* PREVIEW */}
           {preview && (
             <img
               src={preview}
               alt="Preview"
-              className="w-full h-40 object-cover rounded border"
-              style={{ border: "1px solid rgba(251,244,236,1)" }}
+              className="w-full h-40 object-cover rounded-lg border"
+              style={{ borderColor: "rgba(251,244,236,0.3)" }}
             />
           )}
 
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded font-semibold transition disabled:opacity-50"
+            className="w-full py-3 rounded-lg font-semibold transition hover:brightness-110 disabled:opacity-50"
             style={{
               backgroundColor: "rgba(178,60,47,1)",
               color: "rgba(251,244,236,1)",

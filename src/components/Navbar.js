@@ -41,7 +41,6 @@ export default function Navbar() {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Admin check
   const isAdmin = user?.email === "bishalc.foodallpur@gmail.com";
 
   const linkClass = (path) =>
@@ -60,16 +59,17 @@ export default function Navbar() {
 
   return (
     <nav className="bg-[rgba(251,244,236,0.95)] backdrop-blur-md shadow-lg h-20 flex items-center fixed top-0 left-0 w-full z-50">
-      
+
       <div className="flex justify-between items-center w-full px-6">
 
-        {/* Logo */}
+        {/* Logo (LCP optimized) */}
         <Link href="/">
           <Image
             src="/logo.png"
             alt="Logo"
             width={140}
             height={140}
+            priority
             className="h-16 w-auto object-contain"
           />
         </Link>
@@ -109,7 +109,7 @@ export default function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
-              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
             >
               <Shield size={16} /> Admin
             </Link>
@@ -119,7 +119,7 @@ export default function Navbar() {
           {!user ? (
             <Link
               href="/login"
-              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
             >
               <LogIn size={18} /> Login
             </Link>
@@ -145,7 +145,7 @@ export default function Navbar() {
 
         {/* Mobile Button */}
         <button
-          className="md:hidden text-2xl"
+          className="md:hidden text-2xl text-[rgba(69,50,26,1)]"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           ☰
@@ -154,44 +154,97 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="absolute top-20 left-0 w-full bg-white shadow-md flex flex-col p-5 space-y-4 md:hidden">
+        <div
+          className="absolute top-20 left-0 w-full p-5 space-y-4 md:hidden border-t shadow-lg"
+          style={{
+            backgroundColor: "rgba(69,50,26,1)",
+            borderColor: "rgba(251,244,236,0.2)",
+          }}
+        >
 
-          <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
-          <Link href="/menu" onClick={() => setMenuOpen(false)}>Menu</Link>
+          <Link
+            href="/"
+            onClick={() => setMenuOpen(false)}
+            style={{ color: "rgba(251,244,236,1)" }}
+          >
+            Home
+          </Link>
 
-          <Link href="/cart" onClick={() => setMenuOpen(false)}>
+          <Link
+            href="/menu"
+            onClick={() => setMenuOpen(false)}
+            style={{ color: "rgba(251,244,236,1)" }}
+          >
+            Menu
+          </Link>
+
+          <Link
+            href="/cart"
+            onClick={() => setMenuOpen(false)}
+            style={{ color: "rgba(251,244,236,1)" }}
+          >
             Cart ({cartCount})
           </Link>
 
           {user && (
-            <Link href="/profile" onClick={() => setMenuOpen(false)}>
+            <Link
+              href="/profile"
+              onClick={() => setMenuOpen(false)}
+              style={{ color: "rgba(251,244,236,1)" }}
+            >
               Profile
             </Link>
           )}
 
           {isAdmin && (
             <>
-              <Link href="/admin" onClick={() => setMenuOpen(false)}>
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                style={{ color: "rgba(251,244,236,1)" }}
+              >
                 Admin Dashboard
               </Link>
-              <Link href="/admin/add-food" onClick={() => setMenuOpen(false)}>
+
+              <Link
+                href="/admin/add-food"
+                onClick={() => setMenuOpen(false)}
+                style={{ color: "rgba(251,244,236,1)" }}
+              >
                 Add Food
               </Link>
-              <Link href="/admin/manage-food" onClick={() => setMenuOpen(false)}>
+
+              <Link
+                href="/admin/manage-food"
+                onClick={() => setMenuOpen(false)}
+                style={{ color: "rgba(251,244,236,1)" }}
+              >
                 Manage Food
               </Link>
-              <Link href="/admin/orders" onClick={() => setMenuOpen(false)}>
+
+              <Link
+                href="/admin/orders"
+                onClick={() => setMenuOpen(false)}
+                style={{ color: "rgba(251,244,236,1)" }}
+              >
                 Orders
               </Link>
             </>
           )}
 
           {!user ? (
-            <Link href="/login" onClick={() => setMenuOpen(false)}>
+            <Link
+              href="/login"
+              onClick={() => setMenuOpen(false)}
+              style={{ color: "rgba(178,60,47,1)" }}
+            >
               Login
             </Link>
           ) : (
-            <button onClick={handleLogout}>
+            <button
+              onClick={handleLogout}
+              style={{ color: "rgba(251,244,236,1)" }}
+            >
               Logout
             </button>
           )}

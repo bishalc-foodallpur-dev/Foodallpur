@@ -7,7 +7,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
-  updateDoc
+  updateDoc,
 } from "firebase/firestore";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -18,7 +18,10 @@ export default function ManageFood() {
 
   const colors = {
     primary: "rgba(178, 60, 47, 1)",
-    text: "rgba(69, 50, 26, 1)",
+    background: "rgba(251, 244, 236, 1)",
+    card: "rgba(69, 50, 26, 1)",
+    text: "rgba(251, 244, 236, 1)",
+    secondaryText: "rgba(251, 244, 236, 0.8)",
   };
 
   const fetchFoods = async () => {
@@ -61,67 +64,93 @@ export default function ManageFood() {
     <ProtectedRoute adminOnly={true}>
       <AdminLayout>
 
-        <h1
-          className="text-2xl font-bold mb-6"
-          style={{ color: colors.primary }}
-        >
-          Manage Foods
-        </h1>
+        <div className="min-h-screen p-6 bg-[rgba(251,244,236,1)]">
 
-        <div className="grid md:grid-cols-2 gap-4">
-          {foods.map((food) => (
-            <div
-              key={food.id}
-              className="bg-white p-4 shadow rounded border"
-              style={{ borderColor: colors.primary + "20" }}
-            >
-              <h2
-                className="font-semibold text-lg"
-                style={{ color: colors.text }}
+          {/* TITLE */}
+          <h1
+            className="text-2xl font-bold mb-6"
+            style={{ color: colors.primary }}
+          >
+            Manage Foods 🍔
+          </h1>
+
+          {/* GRID */}
+          <div className="grid md:grid-cols-2 gap-6">
+
+            {foods.map((food) => (
+              <div
+                key={food.id}
+                className="p-5 rounded-xl shadow-md hover:shadow-xl transition border"
+                style={{
+                  backgroundColor: colors.card,
+                  borderColor: "rgba(251,244,236,0.2)",
+                }}
               >
-                {food.name}
-              </h2>
 
-              <p className="text-sm capitalize">
-                Category: {food.category}
-              </p>
-
-              <p>
-                Half:{" "}
-                <span style={{ color: colors.primary }}>
-                  Rs {food.halfPrice}
-                </span>
-              </p>
-
-              <p>
-                Full:{" "}
-                <span style={{ color: colors.primary }}>
-                  Rs {food.fullPrice}
-                </span>
-              </p>
-
-              <div className="flex gap-2 mt-3">
-
-                <button
-                  onClick={() => editFood(food)}
-                  className="px-3 py-1 rounded text-white"
-                  style={{ backgroundColor: "rgba(0, 123, 255, 1)" }}
+                {/* NAME */}
+                <h2
+                  className="font-semibold text-lg"
+                  style={{ color: colors.text }}
                 >
-                  Edit
-                </button>
+                  {food.name}
+                </h2>
 
-                <button
-                  onClick={() => deleteFood(food.id)}
-                  className="px-3 py-1 rounded text-white"
-                  style={{ backgroundColor: colors.primary }}
+                {/* CATEGORY */}
+                <p
+                  className="text-sm capitalize"
+                  style={{ color: colors.secondaryText }}
                 >
-                  Delete
-                </button>
+                  Category: {food.category}
+                </p>
+
+                {/* PRICES */}
+                <div className="mt-2">
+                  <p style={{ color: colors.secondaryText }}>
+                    Half:{" "}
+                    <span style={{ color: colors.text }}>
+                      Rs {food.halfPrice}
+                    </span>
+                  </p>
+
+                  <p style={{ color: colors.secondaryText }}>
+                    Full:{" "}
+                    <span style={{ color: colors.text }}>
+                      Rs {food.fullPrice}
+                    </span>
+                  </p>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="flex gap-2 mt-4">
+
+                  <button
+                    onClick={() => editFood(food)}
+                    className="px-3 py-1 rounded text-sm font-medium transition hover:scale-105"
+                    style={{
+                      backgroundColor: "rgba(251,244,236,1)",
+                      color: "rgba(69,50,26,1)",
+                    }}
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => deleteFood(food.id)}
+                    className="px-3 py-1 rounded text-sm font-medium transition hover:scale-105"
+                    style={{
+                      backgroundColor: colors.primary,
+                      color: "rgba(251,244,236,1)",
+                    }}
+                  >
+                    Delete
+                  </button>
+
+                </div>
 
               </div>
+            ))}
 
-            </div>
-          ))}
+          </div>
         </div>
 
       </AdminLayout>
