@@ -21,6 +21,7 @@ import {
   Shield,
   LogIn,
   LogOut,
+  X,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -32,37 +33,56 @@ export default function Navbar() {
   const { cart } = useCart();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Firebase auth listener (safe)
   useEffect(() => {
+    let isMounted = true;
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
+      if (isMounted) {
+        setUser(currentUser);
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
-  const isAdmin = user?.email === "bishalc.foodallpur@gmail.com";
+  // Auto close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
-  const linkClass = (path) =>
-    `flex items-center gap-1 transition duration-200 hover:scale-105 ${
-      pathname === path
-        ? "text-[rgba(178,60,47,1)] font-semibold"
-        : "text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
-    }`;
+  const isAdmin = user?.email === "bishalc.foodallpur@gmail.com";
 
   const handleLogout = async () => {
     await signOut(auth);
     setMenuOpen(false);
   };
 
-  if (loading) return null;
+  const linkClass = (path) =>
+    `flex items-center gap-2 transition ${
+      pathname === path
+        ? "text-[rgba(178,60,47,1)] font-semibold"
+        : "text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
+    }`;
+
+  if (loading) {
+    return (
+      <nav className="bg-[rgba(251,244,236,0.95)] h-20 flex items-center fixed top-0 left-0 w-full z-50 shadow">
+        <div className="px-6">Loading...</div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="bg-[rgba(251,244,236,0.95)] backdrop-blur-md shadow-lg h-20 flex items-center fixed top-0 left-0 w-full z-50">
 
       <div className="flex justify-between items-center w-full px-6">
 
-        {/* Logo (LCP optimized) */}
+        {/* Logo */}
         <Link href="/">
           <Image
             src="/logo.png"
@@ -70,12 +90,12 @@ export default function Navbar() {
             width={140}
             height={140}
             priority
-            className="h-16 w-auto object-contain"
+            className="h-14 w-auto object-contain"
           />
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex space-x-6 items-center">
+        <div className="hidden md:flex items-center gap-6">
 
           <Link href="/" className={linkClass("/")}>
             <Home size={18} /> Home
@@ -88,9 +108,10 @@ export default function Navbar() {
           {/* Cart */}
           <Link
             href="/cart"
-            className="relative flex items-center gap-1 text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
+            className="relative flex items-center gap-2 text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
           >
-            <ShoppingCart size={18} /> Cart
+            <ShoppingCart size={18} />
+            Cart
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-3 bg-[rgba(178,60,47,1)] text-white text-xs px-2 py-0.5 rounded-full">
                 {cartCount}
@@ -109,7 +130,7 @@ export default function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
-              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
+              className="flex items-center gap-2 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
             >
               <Shield size={16} /> Admin
             </Link>
@@ -119,12 +140,12 @@ export default function Navbar() {
           {!user ? (
             <Link
               href="/login"
-              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
+              className="flex items-center gap-2 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
             >
               <LogIn size={18} /> Login
             </Link>
           ) : (
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-3">
               <Image
                 src="/avatar.png"
                 alt="User"
@@ -140,115 +161,68 @@ export default function Navbar() {
               </button>
             </div>
           )}
-
         </div>
 
         {/* Mobile Button */}
         <button
-          className="md:hidden text-2xl text-[rgba(69,50,26,1)]"
+          className="md:hidden text-2xl"
           onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
         >
-          ☰
+          {menuOpen ? <X /> : <MenuIcon />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu (Improved UI) */}
       {menuOpen && (
-        <div
-          className="absolute top-20 left-0 w-full p-5 space-y-4 md:hidden border-t shadow-lg"
-          style={{
-            backgroundColor: "rgba(69,50,26,1)",
-            borderColor: "rgba(251,244,236,0.2)",
-          }}
-        >
+        <div className="absolute top-20 left-0 w-full bg-[rgba(69,50,26,1)] text-[rgba(251,244,236,1)] shadow-lg border-t border-white/10 md:hidden">
 
-          <Link
-            href="/"
-            onClick={() => setMenuOpen(false)}
-            style={{ color: "rgba(251,244,236,1)" }}
-          >
-            Home
-          </Link>
+          <div className="flex flex-col p-5 space-y-4">
 
-          <Link
-            href="/menu"
-            onClick={() => setMenuOpen(false)}
-            style={{ color: "rgba(251,244,236,1)" }}
-          >
-            Menu
-          </Link>
+            <Link href="/" className="hover:text-[rgba(178,60,47,1)]">Home</Link>
+            <Link href="/menu" className="hover:text-[rgba(178,60,47,1)]">Menu</Link>
 
-          <Link
-            href="/cart"
-            onClick={() => setMenuOpen(false)}
-            style={{ color: "rgba(251,244,236,1)" }}
-          >
-            Cart ({cartCount})
-          </Link>
-
-          {user && (
-            <Link
-              href="/profile"
-              onClick={() => setMenuOpen(false)}
-              style={{ color: "rgba(251,244,236,1)" }}
-            >
-              Profile
+            <Link href="/cart" className="hover:text-[rgba(178,60,47,1)]">
+              Cart ({cartCount})
             </Link>
-          )}
 
-          {isAdmin && (
-            <>
-              <Link
-                href="/admin"
-                onClick={() => setMenuOpen(false)}
-                style={{ color: "rgba(251,244,236,1)" }}
-              >
-                Admin Dashboard
+            {user && (
+              <Link href="/profile" className="hover:text-[rgba(178,60,47,1)]">
+                Profile
               </Link>
+            )}
 
-              <Link
-                href="/admin/add-food"
-                onClick={() => setMenuOpen(false)}
-                style={{ color: "rgba(251,244,236,1)" }}
-              >
-                Add Food
+            {isAdmin && (
+              <>
+                <Link href="/admin" className="hover:text-[rgba(178,60,47,1)]">
+                  Admin Dashboard
+                </Link>
+                <Link href="/admin/add-food" className="hover:text-[rgba(178,60,47,1)]">
+                  Add Food
+                </Link>
+                <Link href="/admin/manage-food" className="hover:text-[rgba(178,60,47,1)]">
+                  Manage Food
+                </Link>
+                <Link href="/admin/orders" className="hover:text-[rgba(178,60,47,1)]">
+                  Orders
+                </Link>
+              </>
+            )}
+
+            {!user ? (
+              <Link href="/login" className="text-[rgba(178,60,47,1)] font-semibold">
+                Login
               </Link>
-
-              <Link
-                href="/admin/manage-food"
-                onClick={() => setMenuOpen(false)}
-                style={{ color: "rgba(251,244,236,1)" }}
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="text-left hover:text-[rgba(178,60,47,1)]"
               >
-                Manage Food
-              </Link>
+                Logout
+              </button>
+            )}
 
-              <Link
-                href="/admin/orders"
-                onClick={() => setMenuOpen(false)}
-                style={{ color: "rgba(251,244,236,1)" }}
-              >
-                Orders
-              </Link>
-            </>
-          )}
-
-          {!user ? (
-            <Link
-              href="/login"
-              onClick={() => setMenuOpen(false)}
-              style={{ color: "rgba(178,60,47,1)" }}
-            >
-              Login
-            </Link>
-          ) : (
-            <button
-              onClick={handleLogout}
-              style={{ color: "rgba(251,244,236,1)" }}
-            >
-              Logout
-            </button>
-          )}
-
+          </div>
         </div>
       )}
     </nav>
