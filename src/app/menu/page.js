@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useCart } from "@/context/CartContext";
+import { useSearchParams } from "next/navigation";
 
 export default function Menu() {
   const [foods, setFoods] = useState([]);
@@ -12,13 +13,15 @@ export default function Menu() {
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const { addToCart } = useCart();
+  const searchParams = useSearchParams();
+  const categoryFromHome = searchParams.get("category");
 
   const colors = {
     primary: "rgba(178, 60, 47, 1)",
     bg: "rgba(251, 244, 236, 1)",
-    cardBorder: "rgba(69, 50, 26, 0.2)",
     dark: "rgba(69, 50, 26, 1)",
     textLight: "rgba(251,244,236,1)",
+    cardBorder: "rgba(69, 50, 26, 0.15)",
   };
 
   // Fetch foods
@@ -34,21 +37,23 @@ export default function Menu() {
     return () => unsubscribe();
   }, []);
 
-  // Categories
+  // Auto select category from Home
+  useEffect(() => {
+    if (categoryFromHome) {
+      setSelectedCategory(categoryFromHome);
+    }
+  }, [categoryFromHome]);
+
+  // Categories from DB
   const categories = [
     "all",
     ...new Set(foods.map((f) => f.category).filter(Boolean)),
   ];
 
-  // Set type
   const handleTypeChange = (foodId, type) => {
-    setSelectedType((prev) => ({
-      ...prev,
-      [foodId]: type,
-    }));
+    setSelectedType((prev) => ({ ...prev, [foodId]: type }));
   };
 
-  // Quantity controls
   const increaseQty = (foodId) => {
     setQuantities((prev) => ({
       ...prev,
@@ -63,7 +68,6 @@ export default function Menu() {
     }));
   };
 
-  // Add to cart
   const handleAddToCart = (food) => {
     const type = selectedType[food.id] || "full";
     const quantity = quantities[food.id] || 1;
@@ -83,40 +87,42 @@ export default function Menu() {
     });
   };
 
-  // Filter foods
   const filteredFoods =
     selectedCategory === "all"
       ? foods
       : foods.filter((f) => f.category === selectedCategory);
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
 
       {/* CATEGORY FILTER */}
-      <div className="flex gap-3 mb-8 flex-wrap justify-center">
-        {categories.map((cat) => {
-          const isActive = selectedCategory === cat;
+      <div className="mb-6 overflow-x-auto">
+        <div className="flex gap-3 w-max mx-auto">
 
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className="px-4 py-2 rounded-full font-medium capitalize transition hover:scale-105"
-              style={{
-                backgroundColor: isActive
-                  ? colors.primary
-                  : colors.dark,
-                color: colors.textLight,
-              }}
-            >
-              {cat}
-            </button>
-          );
-        })}
+          {categories.map((cat) => {
+            const isActive = selectedCategory === cat;
+
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className="px-4 py-2 rounded-full text-sm capitalize whitespace-nowrap"
+                style={{
+                  backgroundColor: isActive ? colors.primary : colors.dark,
+                  color: colors.textLight,
+                }}
+              >
+                {cat}
+              </button>
+            );
+          })}
+
+        </div>
       </div>
 
-      {/* FOOD GRID */}
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
         {filteredFoods.map((food) => {
           const type = selectedType[food.id] || "full";
           const qty = quantities[food.id] || 1;
@@ -124,74 +130,59 @@ export default function Menu() {
           return (
             <div
               key={food.id}
-              className="p-4 rounded-xl shadow-md hover:shadow-xl transition hover:scale-[1.02]"
+              className="p-4 rounded-xl shadow-md"
               style={{
                 backgroundColor: colors.bg,
                 border: `1px solid ${colors.cardBorder}`,
               }}
             >
-              {/* IMAGE */}
+
               <img
                 src={food.image}
                 alt={food.name}
                 className="w-full h-40 object-cover rounded-lg mb-3"
               />
 
-              {/* NAME */}
-              <h2
-                className="text-lg font-bold"
-                style={{ color: colors.dark }}
-              >
+              <h2 className="font-bold text-lg" style={{ color: colors.dark }}>
                 {food.name}
               </h2>
 
-              {/* CATEGORY */}
-              <p
-                className="text-sm mb-2"
-                style={{ color: "rgba(69,50,26,0.7)" }}
-              >
+              <p className="text-sm mb-2" style={{ color: colors.dark }}>
                 {food.category}
               </p>
 
-              {/* PRICES */}
-              <div className="mb-3 text-sm space-y-1">
-                <p style={{ color: colors.dark }}>
-                  Full: Rs. {food.fullPrice}
-                </p>
-                <p style={{ color: colors.dark }}>
-                  Half: Rs. {food.halfPrice}
-                </p>
+              <div className="text-sm mb-3">
+                <p>Full: Rs. {food.fullPrice}</p>
+                <p>Half: Rs. {food.halfPrice}</p>
               </div>
 
-              {/* HALF / FULL TOGGLE */}
+              {/* TYPE */}
               <div className="flex gap-2 mb-3">
                 <button
                   onClick={() => handleTypeChange(food.id, "half")}
-                  className="px-3 py-1 rounded text-sm transition"
                   style={{
-                    backgroundColor:
-                      type === "half" ? colors.primary : colors.dark,
+                    backgroundColor: type === "half" ? colors.primary : colors.dark,
                     color: colors.textLight,
                   }}
+                  className="px-3 py-1 rounded"
                 >
                   Half
                 </button>
 
                 <button
                   onClick={() => handleTypeChange(food.id, "full")}
-                  className="px-3 py-1 rounded text-sm transition"
                   style={{
-                    backgroundColor:
-                      type === "full" ? colors.primary : colors.dark,
+                    backgroundColor: type === "full" ? colors.primary : colors.dark,
                     color: colors.textLight,
                   }}
+                  className="px-3 py-1 rounded"
                 >
                   Full
                 </button>
               </div>
 
-              {/* QUANTITY SELECTOR */}
-              <div className="flex items-center justify-center gap-3 mb-3">
+              {/* QTY */}
+              <div className="flex justify-center items-center gap-3 mb-3">
                 <button
                   onClick={() => decreaseQty(food.id)}
                   className="px-3 py-1 rounded text-white"
@@ -200,9 +191,7 @@ export default function Menu() {
                   -
                 </button>
 
-                <span style={{ color: colors.dark, fontWeight: "bold" }}>
-                  {qty}
-                </span>
+                <span style={{ color: colors.dark }}>{qty}</span>
 
                 <button
                   onClick={() => increaseQty(food.id)}
@@ -213,10 +202,10 @@ export default function Menu() {
                 </button>
               </div>
 
-              {/* ADD TO CART */}
+              {/* ADD */}
               <button
                 onClick={() => handleAddToCart(food)}
-                className="w-full py-2 rounded-lg font-semibold transition hover:brightness-110"
+                className="w-full py-2 rounded-lg"
                 style={{
                   backgroundColor: colors.primary,
                   color: colors.textLight,
@@ -224,9 +213,11 @@ export default function Menu() {
               >
                 Add to Cart
               </button>
+
             </div>
           );
         })}
+
       </div>
     </div>
   );

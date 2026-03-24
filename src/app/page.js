@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 export default function Home() {
   const videos = [
@@ -14,8 +16,32 @@ export default function Home() {
     "/videos/food7.mp4",
   ];
 
+  const [foods, setFoods] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const [currentVideo, setCurrentVideo] = useState(0);
   const [fade, setFade] = useState(true);
+
+  // ✅ Fetch foods from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "foods"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setFoods(data);
+
+      // Extract unique categories
+      const uniqueCategories = [
+        ...new Set(data.map((f) => f.category).filter(Boolean)),
+      ];
+
+      setCategories(uniqueCategories);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const getRandomIndex = useCallback((current) => {
     let next;
@@ -32,8 +58,8 @@ export default function Home() {
       setTimeout(() => {
         setCurrentVideo((prev) => getRandomIndex(prev));
         setFade(true);
-      }, 500); // match fade duration
-    }, 5000);
+      }, 500);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [getRandomIndex]);
@@ -41,96 +67,72 @@ export default function Home() {
   return (
     <main className="bg-[rgba(251,244,236,1)] pt-20">
 
-      {/* HERO */}
-      <div className="relative w-full h-[75vh] overflow-hidden">
+      {/* HERO VIDEO */}
+      <section className="w-full flex flex-col items-center px-4">
 
-        <video
-          src={videos[currentVideo]}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className={`w-full h-full object-cover transition-opacity duration-500 ${
-            fade ? "opacity-100" : "opacity-0"
-          }`}
-        />
+        <div className="relative w-full max-w-5xl h-[45vh] md:h-[55vh] rounded-xl overflow-hidden shadow-lg">
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 flex flex-col justify-center items-center text-center px-6">
+          <video
+            key={currentVideo}
+            src={videos[currentVideo]}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className={`w-full h-full object-cover transition-opacity duration-700 ${
+              fade ? "opacity-100" : "opacity-0"
+            }`}
+          />
 
-          <h1 className="text-4xl md:text-6xl font-bold text-[rgba(251,244,236,1)] mb-4 leading-tight">
-            Delicious Food <br /> Delivered Fast 🍔
-          </h1>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
 
-          <p className="text-[rgba(251,244,236,0.85)] max-w-xl mb-6">
+        <div className="text-center max-w-2xl mt-8">
+
+          <p className="text-[rgba(69,50,26,1)] text-sm md:text-lg mb-6">
             Order fresh meals from FoodAllpur and enjoy hot, tasty food at your doorstep with just a few clicks.
           </p>
 
           <Link
             href="/menu"
-            className="bg-[rgba(178,60,47,1)] text-white px-8 py-3 rounded-lg shadow-lg hover:scale-105 transition"
+            className="bg-[rgba(178,60,47,1)] text-white px-6 py-3 rounded-lg shadow-md hover:scale-105 transition inline-block"
           >
             Order Now
           </Link>
 
         </div>
-      </div>
+      </section>
 
-      {/* FEATURES */}
-      <div className="flex flex-col items-center px-6 pt-16 pb-20">
+      {/* DYNAMIC CATEGORIES FROM MENU */}
+      <section className="px-4 md:px-6 py-16">
 
-        <h2 className="text-3xl font-bold text-[rgba(178,60,47,1)] mb-10 text-center">
-          Why Choose FoodAllpur 🍽️
+        <h2 className="text-2xl md:text-3xl font-bold text-[rgba(178,60,47,1)] text-center mb-10">
+          Categories 📂
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl w-full">
+        {categories.length === 0 ? (
+          <p className="text-center text-[rgba(69,50,26,1)]">
+            No categories found.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
 
-          {[
-            {
-              title: "🍕 Fast Delivery",
-              desc: "Get your food delivered quickly and fresh at your doorstep.",
-            },
-            {
-              title: "🍔 Best Quality",
-              desc: "High-quality, hygienic and freshly prepared meals every time.",
-            },
-            {
-              title: "💳 Easy Payment",
-              desc: "Secure and multiple payment options for smooth checkout.",
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:scale-105 transition text-center border-t-4 border-[rgba(178,60,47,1)]"
-            >
-              <h3 className="text-xl font-semibold text-[rgba(178,60,47,1)] mb-2">
-                {item.title}
-              </h3>
-              <p className="text-[rgba(69,50,26,1)] text-sm">
-                {item.desc}
-              </p>
-            </div>
-          ))}
+            {categories.map((cat, i) => (
+              <Link
+                key={i}
+                href={`/menu?category=${cat}`}
+                className="bg-white rounded-xl shadow-md p-4 text-center hover:scale-105 transition"
+              >
+                <div className="font-semibold text-[rgba(69,50,26,1)] capitalize">
+                  {cat}
+                </div>
+              </Link>
+            ))}
 
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* CTA */}
-      <div className="bg-[rgba(178,60,47,1)] text-white py-12 text-center">
-
-        <h2 className="text-2xl md:text-3xl font-bold mb-4">
-          Hungry? Order now and enjoy!
-        </h2>
-
-        <Link
-          href="/menu"
-          className="bg-white text-[rgba(178,60,47,1)] px-6 py-3 rounded-lg font-semibold hover:scale-105 transition"
-        >
-          Browse Menu
-        </Link>
-
-      </div>
+      </section>
 
     </main>
   );
