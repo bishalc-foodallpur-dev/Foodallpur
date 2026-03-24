@@ -29,11 +29,9 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Cart context
   const { cart } = useCart();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // 🔥 Auth listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -43,37 +41,36 @@ export default function Navbar() {
     return () => unsubscribe();
   }, []);
 
-  const isAdmin = user?.email === "bishalc.foodallpur@gmail.com"; // change if needed
+  // ✅ Admin check
+  const isAdmin = user?.email === "bishalc.foodallpur@gmail.com";
 
   const linkClass = (path) =>
-    `flex items-center gap-1 transition hover:scale-105 duration-200 ${
+    `flex items-center gap-1 transition duration-200 hover:scale-105 ${
       pathname === path
         ? "text-[rgba(178,60,47,1)] font-semibold"
         : "text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
     }`;
 
-  const handleLinkClick = () => setMenuOpen(false);
-
   const handleLogout = async () => {
     await signOut(auth);
+    setMenuOpen(false);
   };
 
-  // Prevent flicker
   if (loading) return null;
 
   return (
     <nav className="bg-[rgba(251,244,236,0.95)] backdrop-blur-md shadow-lg h-20 flex items-center fixed top-0 left-0 w-full z-50">
       
       <div className="flex justify-between items-center w-full px-6">
-        
+
         {/* Logo */}
-        <Link href="/" className="flex items-center h-full">
+        <Link href="/">
           <Image
             src="/logo.png"
-            alt="FoodAllpur Logo"
+            alt="Logo"
             width={140}
             height={140}
-            className="object-contain h-16 w-auto"
+            className="h-16 w-auto object-contain"
           />
         </Link>
 
@@ -88,10 +85,12 @@ export default function Navbar() {
             <MenuIcon size={18} /> Menu
           </Link>
 
-          {/* Cart with badge */}
-          <Link href="/cart" className="relative flex items-center gap-1 text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]">
+          {/* Cart */}
+          <Link
+            href="/cart"
+            className="relative flex items-center gap-1 text-[rgba(69,50,26,1)] hover:text-[rgba(178,60,47,1)]"
+          >
             <ShoppingCart size={18} /> Cart
-
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-3 bg-[rgba(178,60,47,1)] text-white text-xs px-2 py-0.5 rounded-full">
                 {cartCount}
@@ -108,11 +107,11 @@ export default function Navbar() {
 
           {/* Admin */}
           {isAdmin && (
-            <Link href="/admin/add-food">
-              <button className="bg-[rgba(178,60,47,1)] text-white px-5 py-2 rounded-lg hover:opacity-90">
-                <Shield size={16} className="inline mr-1" />
-                Admin
-              </button>
+            <Link
+              href="/admin"
+              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg"
+            >
+              <Shield size={16} /> Admin
             </Link>
           )}
 
@@ -120,7 +119,7 @@ export default function Navbar() {
           {!user ? (
             <Link
               href="/login"
-              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg hover:opacity-90"
+              className="flex items-center gap-1 bg-[rgba(178,60,47,1)] text-white px-4 py-2 rounded-lg"
             >
               <LogIn size={18} /> Login
             </Link>
@@ -146,7 +145,7 @@ export default function Navbar() {
 
         {/* Mobile Button */}
         <button
-          className="md:hidden text-2xl text-[rgba(69,50,26,1)]"
+          className="md:hidden text-2xl"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           ☰
@@ -155,39 +154,45 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="absolute top-20 left-0 w-full bg-[rgba(251,244,236,0.98)] backdrop-blur-md shadow-md flex flex-col space-y-4 p-5 md:hidden border-t border-[rgba(69,50,26,0.1)]">
+        <div className="absolute top-20 left-0 w-full bg-white shadow-md flex flex-col p-5 space-y-4 md:hidden">
 
-          <Link href="/" onClick={handleLinkClick} className="flex items-center gap-2">
-            <Home size={18} /> Home
-          </Link>
+          <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
+          <Link href="/menu" onClick={() => setMenuOpen(false)}>Menu</Link>
 
-          <Link href="/menu" onClick={handleLinkClick} className="flex items-center gap-2">
-            <MenuIcon size={18} /> Menu
-          </Link>
-
-          <Link href="/cart" onClick={handleLinkClick} className="flex items-center gap-2">
-            <ShoppingCart size={18} /> Cart ({cartCount})
+          <Link href="/cart" onClick={() => setMenuOpen(false)}>
+            Cart ({cartCount})
           </Link>
 
           {user && (
-            <Link href="/profile" onClick={handleLinkClick} className="flex items-center gap-2">
-              <User size={18} /> Profile
+            <Link href="/profile" onClick={() => setMenuOpen(false)}>
+              Profile
             </Link>
           )}
 
           {isAdmin && (
-            <Link href="/admin/add-food" onClick={handleLinkClick} className="flex items-center gap-2">
-              <Shield size={18} /> Admin
-            </Link>
+            <>
+              <Link href="/admin" onClick={() => setMenuOpen(false)}>
+                Admin Dashboard
+              </Link>
+              <Link href="/admin/add-food" onClick={() => setMenuOpen(false)}>
+                Add Food
+              </Link>
+              <Link href="/admin/manage-food" onClick={() => setMenuOpen(false)}>
+                Manage Food
+              </Link>
+              <Link href="/admin/orders" onClick={() => setMenuOpen(false)}>
+                Orders
+              </Link>
+            </>
           )}
 
           {!user ? (
-            <Link href="/login" onClick={handleLinkClick} className="flex items-center gap-2">
-              <LogIn size={18} /> Login
+            <Link href="/login" onClick={() => setMenuOpen(false)}>
+              Login
             </Link>
           ) : (
-            <button onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut size={18} /> Logout
+            <button onClick={handleLogout}>
+              Logout
             </button>
           )}
 
