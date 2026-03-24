@@ -28,14 +28,12 @@ export default function Admin() {
   return (
     <ProtectedRoute adminOnly={true}>
       <AdminLayout>
-        <div className="min-h-screen p-6 bg-[rgba(251,244,236,1)]">
+        <div className="min-h-screen p-6" style={{ backgroundColor: "rgba(251,244,236,1)" }}>
 
-          {/* TITLE */}
-          <h1 className="text-3xl font-bold mb-8 text-[rgba(178,60,47,1)]">
+          <h1 className="text-3xl font-bold mb-8" style={{ color: "rgba(178,60,47,1)" }}>
             Admin Dashboard
           </h1>
 
-          {/* GRID */}
           <div className="grid md:grid-cols-2 gap-6">
 
             <AdminCard title="🍔 Foods">

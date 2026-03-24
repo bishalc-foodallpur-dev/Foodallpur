@@ -2,183 +2,64 @@
 
 import { useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { uploadImage } from "@/lib/cloudinary";
 
 export default function AddFood() {
-  const [name, setName] = useState("");
-  const [fullPrice, setFullPrice] = useState("");
-  const [halfPrice, setHalfPrice] = useState("");
-  const [category, setCategory] = useState("");
+  const [form, setForm] = useState({ name: "", fullPrice: "", halfPrice: "", category: "" });
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handleImageChange = (e) => {
+  const colors = { primary: "rgba(178,60,47,1)", bg: "rgba(251,244,236,1)", card: "rgba(69,50,26,1)" };
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleImage = (e) => {
     const file = e.target.files[0];
     setImage(file);
-
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    }
+    if (file) setPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!name || !fullPrice || !halfPrice || !category || !image) {
-      alert("❌ Please fill all fields");
-      return;
-    }
-
+    if (!form.name || !form.fullPrice || !form.halfPrice || !form.category || !image) return alert("Fill all fields");
     setLoading(true);
-
     try {
       const imageUrl = await uploadImage(image);
-
-      if (!imageUrl) {
-        alert("❌ Image upload failed");
-        setLoading(false);
-        return;
-      }
-
-      await addDoc(collection(db, "foods"), {
-        name: name.trim(),
-        fullPrice: Number(fullPrice),
-        halfPrice: Number(halfPrice),
-        category: category.toLowerCase().trim(),
-        image: imageUrl,
-        createdAt: new Date(),
-      });
-
-      alert("✅ Food added successfully!");
-
-      setName("");
-      setFullPrice("");
-      setHalfPrice("");
-      setCategory("");
+      await addDoc(collection(db, "foods"), { ...form, fullPrice: Number(form.fullPrice), halfPrice: Number(form.halfPrice), image: imageUrl, createdAt: serverTimestamp() });
+      alert("Food Added ✅");
+      setForm({ name: "", fullPrice: "", halfPrice: "", category: "" });
       setImage(null);
       setPreview(null);
-    } catch (error) {
-      console.error(error);
-      alert("❌ Error adding food");
-    }
-
+    } catch (err) { console.error(err); alert("Error adding food"); }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[rgba(251,244,236,1)]">
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
+      <form onSubmit={handleSubmit} className="w-full max-w-xl p-6 rounded-xl shadow-lg" style={{ backgroundColor: colors.card }}>
+        <h2 className="text-2xl font-bold text-center mb-6 text-white">Add Food 🍔</h2>
 
-      {/* CARD */}
-      <div
-        className="w-full max-w-xl p-6 rounded-xl shadow-md hover:shadow-xl transition border"
-        style={{
-          backgroundColor: "rgba(69,50,26,1)",
-          borderColor: "rgba(251,244,236,0.2)",
-        }}
-      >
+        <input name="name" placeholder="Food Name" value={form.name} onChange={handleChange} className="w-full p-3 mb-3 rounded"/>
+        <input name="fullPrice" type="number" placeholder="Full Price" value={form.fullPrice} onChange={handleChange} className="w-full p-3 mb-3 rounded"/>
+        <input name="halfPrice" type="number" placeholder="Half Price" value={form.halfPrice} onChange={handleChange} className="w-full p-3 mb-3 rounded"/>
 
-        {/* TITLE */}
-        <h2
-          className="text-2xl font-bold mb-6 text-center"
-          style={{ color: "rgba(251,244,236,1)" }}
-        >
-          Add Food 🍔
-        </h2>
+        <select name="category" value={form.category} onChange={handleChange} className="w-full p-3 mb-3 rounded">
+          <option value="">Select Category</option>
+          <option value="pizza">Pizza</option>
+          <option value="burger">Burger</option>
+          <option value="momo">Momo</option>
+          <option value="chicken">Chicken</option>
+          <option value="drinks">Drinks</option>
+        </select>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <input type="file" accept="image/*" onChange={handleImage}/>
+        {preview && <img src={preview} className="w-full h-40 object-cover mt-3 rounded"/>}
 
-          {/* NAME */}
-          <input
-            type="text"
-            placeholder="Food Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-3 rounded outline-none transition focus:ring-2"
-            style={{
-              backgroundColor: "transparent",
-              border: "1px solid rgba(251,244,236,0.4)",
-              color: "rgba(251,244,236,1)",
-            }}
-          />
-
-          {/* FULL PRICE */}
-          <input
-            type="number"
-            placeholder="Full Price (Rs.)"
-            value={fullPrice}
-            onChange={(e) => setFullPrice(e.target.value)}
-            className="w-full p-3 rounded outline-none transition focus:ring-2"
-            style={{
-              backgroundColor: "transparent",
-              border: "1px solid rgba(251,244,236,0.4)",
-              color: "rgba(251,244,236,1)",
-            }}
-          />
-
-          {/* HALF PRICE */}
-          <input
-            type="number"
-            placeholder="Half Price (Rs.)"
-            value={halfPrice}
-            onChange={(e) => setHalfPrice(e.target.value)}
-            className="w-full p-3 rounded outline-none transition focus:ring-2"
-            style={{
-              backgroundColor: "transparent",
-              border: "1px solid rgba(251,244,236,0.4)",
-              color: "rgba(251,244,236,1)",
-            }}
-          />
-
-          {/* CATEGORY */}
-          <input
-            type="text"
-            placeholder="Category (e.g. pizza, burger)"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-3 rounded outline-none transition focus:ring-2"
-            style={{
-              backgroundColor: "transparent",
-              border: "1px solid rgba(251,244,236,0.4)",
-              color: "rgba(251,244,236,1)",
-            }}
-          />
-
-          {/* IMAGE */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="w-full"
-            style={{ color: "rgba(251,244,236,1)" }}
-          />
-
-          {/* PREVIEW */}
-          {preview && (
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full h-40 object-cover rounded-lg border"
-              style={{ borderColor: "rgba(251,244,236,0.3)" }}
-            />
-          )}
-
-          {/* BUTTON */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-lg font-semibold transition hover:brightness-110 disabled:opacity-50"
-            style={{
-              backgroundColor: "rgba(178,60,47,1)",
-              color: "rgba(251,244,236,1)",
-            }}
-          >
-            {loading ? "Uploading..." : "Add Food"}
-          </button>
-
-        </form>
-      </div>
+        <button type="submit" disabled={loading} className="w-full mt-4 py-3 rounded text-white" style={{ backgroundColor: colors.primary }}>
+          {loading ? "Uploading..." : "Add Food"}
+        </button>
+      </form>
     </div>
   );
 }
