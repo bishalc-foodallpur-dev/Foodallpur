@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.15.9",
+    "@react-google-maps/api": "^2.20.8",
     "axios": "^1.13.6",
     "firebase": "^12.11.0",
     "framer-motion": "^12.38.0",

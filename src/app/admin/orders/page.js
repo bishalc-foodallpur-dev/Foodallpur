@@ -1,203 +1,144 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import useAuth from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import AdminLayout from "@/components/admin/AdminLayout";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
+import { useCart } from "@/context/CartContext";
+import Link from "next/link";
 
-export default function AdminOrders() {
+export default function OrdersPage() {
+  const { user, loading: authLoading } = useAuth();
+  const { addToCart } = useCart();
+
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const statusOptions = [
-    "Pending",
-    "Cooking",
-    "Out for delivery",
-    "Delivered",
-    "Cancelled",
-  ];
+  const colors = {
+    primary: "rgba(178,60,47,1)",
+    bg: "rgba(251,244,236,1)",
+    dark: "rgba(69,50,26,1)",
+  };
 
-  // =====================
-  // REALTIME FETCH
-  // =====================
+  // ✅ Fetch orders
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "orders"), (snapshot) => {
+    if (!user) return;
+
+    setLoading(true);
+
+    const q = query(
+      collection(db, "orders"),
+      where("userId", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      // sort newest first
       data.sort(
-        (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+        (a, b) =>
+          (b.createdAt?.seconds || 0) -
+          (a.createdAt?.seconds || 0)
       );
 
       setOrders(data);
+      setLoading(false);
     });
 
-    return () => unsub();
-  }, []);
+    return () => unsubscribe();
+  }, [user]);
 
-  // =====================
-  // UPDATE STATUS
-  // =====================
-  const updateStatus = async (orderId, status) => {
-    await updateDoc(doc(db, "orders", orderId), { status });
+  // ✅ Reorder
+  const handleReorder = (items) => {
+    items.forEach((item) => addToCart(item));
+    alert("🛒 Added to cart!");
   };
 
-  // =====================
-  // MARK AS PAID
-  // =====================
-  const markAsPaid = async (orderId) => {
-    await updateDoc(doc(db, "orders", orderId), {
-      paid: true,
-      paymentStatus: "paid",
-    });
-  };
+  // ✅ Loading states
+  if (authLoading || loading) {
+    return <p className="text-center mt-20">Loading...</p>;
+  }
 
-  // =====================
-  // CANCEL ORDER
-  // =====================
-  const cancelOrder = async (orderId) => {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
-    await updateDoc(doc(db, "orders", orderId), { status: "Cancelled" });
-  };
-
-  // =====================
-  // UI COLORS
-  // =====================
-  const colors = {
-    primary: "rgba(178, 60, 47, 1)",
-    bg: "rgba(251, 244, 236, 1)",
-    card: "rgba(69, 50, 26, 1)",
-    text: "rgba(251,244,236,1)",
-    secondaryText: "rgba(251,244,236,0.8)",
-  };
-
-  // =====================
-  // UI
-  // =====================
   return (
-    <ProtectedRoute adminOnly={true}>
-      <AdminLayout>
-        <div
-          className="min-h-screen p-6"
-          style={{ backgroundColor: colors.bg }}
-        >
+    <ProtectedRoute>
+      <div
+        className="min-h-screen px-4 py-10"
+        style={{ backgroundColor: colors.bg }}
+      >
+        {/* HEADER */}
+        <div className="max-w-3xl mx-auto mb-6 flex justify-between items-center">
           <h1
-            className="text-2xl font-bold mb-6"
+            className="text-2xl font-bold"
             style={{ color: colors.primary }}
           >
-            Admin Orders 📦
+            📜 Order History
           </h1>
 
-          {orders.length === 0 ? (
-            <p style={{ color: colors.primary }}>No orders found</p>
-          ) : (
-            orders.map((order) => (
+          <Link
+            href="/profile"
+            className="px-3 py-1 rounded text-white text-sm"
+            style={{ backgroundColor: colors.primary }}
+          >
+            ← Back
+          </Link>
+        </div>
+
+        {/* EMPTY */}
+        {orders.length === 0 ? (
+          <p className="text-center" style={{ color: colors.dark }}>
+            No orders found
+          </p>
+        ) : (
+          <div className="max-w-3xl mx-auto space-y-4">
+            {orders.map((order) => (
               <div
                 key={order.id}
-                className="p-5 mb-5 rounded-xl shadow border"
-                style={{
-                  backgroundColor: colors.card,
-                  borderColor: "rgba(251,244,236,0.2)",
-                }}
+                className="p-4 bg-white rounded shadow"
               >
-                {/* HEADER */}
-                <div className="flex justify-between">
-                  <p className="font-semibold" style={{ color: colors.text }}>
-                    ID: {order.id.slice(0, 6)}
-                  </p>
+                {/* TOP */}
+                <div className="flex justify-between mb-2">
+                  <span style={{ color: colors.dark }}>
+                    #{order.id.slice(0, 6)}
+                  </span>
 
-                  <p
-                    style={{
-                      color:
-                        order.status === "Delivered"
-                          ? "lightgreen"
-                          : order.status === "Cooking"
-                          ? "orange"
-                          : order.status === "Out for delivery"
-                          ? "skyblue"
-                          : order.status === "Cancelled"
-                          ? "red"
-                          : "yellow",
-                    }}
-                  >
+                  <span style={{ color: colors.primary }}>
                     {order.status}
-                  </p>
+                  </span>
                 </div>
-
-                {/* USER */}
-                <p
-                  className="text-sm mt-2"
-                  style={{ color: colors.secondaryText }}
-                >
-                  User: {order.userEmail || order.userId}
-                </p>
 
                 {/* ITEMS */}
-                <div className="mt-3" style={{ color: colors.text }}>
-                  {order.items?.map((item, i) => (
-                    <p key={i}>
-                      {item.name} × {item.quantity}
-                    </p>
-                  ))}
-                </div>
+                {order.items?.map((item, i) => (
+                  <p key={i} className="text-sm text-gray-600">
+                    {item.name} × {item.quantity}
+                  </p>
+                ))}
 
                 {/* TOTAL */}
-                <p
-                  className="font-semibold mt-2"
-                  style={{ color: colors.text }}
-                >
-                  Total: Rs {order.total}
+                <p className="font-semibold mt-2">
+                  Rs {order.total}
                 </p>
 
-                {/* STATUS BUTTONS */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => updateStatus(order.id, status)}
-                      className="px-3 py-1 text-sm rounded transition hover:scale-105"
-                      style={{
-                        backgroundColor: colors.text,
-                        color: colors.card,
-                      }}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={() => markAsPaid(order.id)}
-                    className="px-3 py-1 rounded text-sm"
-                    style={{
-                      backgroundColor: colors.primary,
-                      color: colors.text,
-                    }}
-                  >
-                    Mark Paid
-                  </button>
-
-                  <button
-                    onClick={() => cancelOrder(order.id)}
-                    className="px-3 py-1 rounded text-sm"
-                    style={{
-                      backgroundColor: "red",
-                      color: colors.text,
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
+                {/* BUTTON */}
+                <button
+                  onClick={() => handleReorder(order.items)}
+                  className="mt-3 px-4 py-2 text-white rounded"
+                  style={{ backgroundColor: colors.primary }}
+                >
+                  🔁 Reorder
+                </button>
               </div>
-            ))
-          )}
-        </div>
-      </AdminLayout>
+            ))}
+          </div>
+        )}
+      </div>
     </ProtectedRoute>
   );
 }
