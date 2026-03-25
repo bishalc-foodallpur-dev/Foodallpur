@@ -2,6 +2,7 @@
 
 import { useCart } from "@/context/CartContext";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 export default function CartPage() {
   const {
@@ -12,6 +13,8 @@ export default function CartPage() {
     decreaseQty,
     clearCart,
   } = useCart();
+
+  const safeCart = cart || [];
 
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -24,26 +27,28 @@ export default function CartPage() {
     dark: "rgba(69,50,26,1)",
   };
 
+  // ✅ Calculate total safely
   useEffect(() => {
-    let sum = 0;
-
-    cart.forEach((item) => {
+    const sum = safeCart.reduce((acc, item) => {
       const price =
         item.type === "half"
-          ? item.halfPrice || item.price / 2
-          : item.fullPrice || item.price;
+          ? item.halfPrice ?? item.price / 2
+          : item.fullPrice ?? item.price;
 
-      const qty = item.quantity || 1;
+      const qty = item.quantity ?? 1;
 
-      sum += price * qty;
-    });
+      return acc + price * qty;
+    }, 0);
 
     setTotal(sum);
-  }, [cart]);
+  }, [safeCart]);
 
+  // ✅ Handle Payment
   const handlePayment = async () => {
+    if (loading) return;
+
     try {
-      if (cart.length === 0) {
+      if (safeCart.length === 0) {
         alert("Cart is empty");
         return;
       }
@@ -51,12 +56,13 @@ export default function CartPage() {
       setLoading(true);
 
       const order = {
-        items: cart,
+        items: safeCart,
         total,
         createdAt: new Date().toISOString(),
         status: "pending",
       };
 
+      // ✅ Create Order
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,6 +74,7 @@ export default function CartPage() {
 
       const orderId = data.orderId;
 
+      // ✅ Generate QR Payment
       const paymentRes = await fetch("/api/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,8 +90,12 @@ export default function CartPage() {
       setQrCode(paymentData.qrCode);
       setShowQR(true);
 
+      // ✅ Clear cart after QR shown
+      clearCart();
+
     } catch (error) {
-      alert(error.message);
+      console.error(error);
+      alert(error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -102,7 +113,7 @@ export default function CartPage() {
         Your Cart 🛒
       </h1>
 
-      {cart.length === 0 ? (
+      {safeCart.length === 0 ? (
         <p className="text-center" style={{ color: colors.dark }}>
           Your cart is empty.
         </p>
@@ -110,13 +121,13 @@ export default function CartPage() {
         <div className="space-y-4 max-w-4xl mx-auto">
 
           {/* ITEMS */}
-          {cart.map((item) => {
+          {safeCart.map((item) => {
             const price =
               item.type === "half"
-                ? item.halfPrice || item.price / 2
-                : item.fullPrice || item.price;
+                ? item.halfPrice ?? item.price / 2
+                : item.fullPrice ?? item.price;
 
-            const qty = item.quantity || 1;
+            const qty = item.quantity ?? 1;
             const itemTotal = price * qty;
 
             return (
@@ -149,7 +160,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => decreaseQty(item.id)}
-                      className="px-3 py-2 rounded text-white"
+                      className="px-3 py-2 rounded text-white transition hover:scale-105"
                       style={{ backgroundColor: colors.dark }}
                     >
                       -
@@ -159,7 +170,7 @@ export default function CartPage() {
 
                     <button
                       onClick={() => increaseQty(item.id)}
-                      className="px-3 py-2 rounded text-white"
+                      className="px-3 py-2 rounded text-white transition hover:scale-105"
                       style={{ backgroundColor: colors.dark }}
                     >
                       +
@@ -208,7 +219,7 @@ export default function CartPage() {
                   {/* REMOVE */}
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="px-3 py-2 rounded text-white text-sm w-full mt-2"
+                    className="px-3 py-2 rounded text-white text-sm w-full mt-2 transition hover:scale-105"
                     style={{ backgroundColor: "red" }}
                   >
                     Remove
@@ -226,19 +237,24 @@ export default function CartPage() {
                 Scan to Pay
               </h2>
 
-              <img src={qrCode} className="mx-auto w-48 h-48" />
+              <Image
+                src={qrCode}
+                alt="QR Code"
+                width={200}
+                height={200}
+                className="mx-auto"
+              />
 
               <p className="text-xs text-gray-500 mt-3">
                 Scan using your payment app
               </p>
             </div>
           )}
-
         </div>
       )}
 
-      {/* STICKY MOBILE FOOTER */}
-      {cart.length > 0 && (
+      {/* MOBILE FOOTER */}
+      {safeCart.length > 0 && (
         <div className="fixed bottom-0 left-0 w-full bg-white shadow-lg p-4 flex flex-col gap-3 md:hidden">
 
           <div className="flex justify-between font-semibold" style={{ color: colors.dark }}>
@@ -264,10 +280,36 @@ export default function CartPage() {
               {loading ? "Processing..." : "Pay"}
             </button>
           </div>
-
         </div>
       )}
 
+      {/* DESKTOP FOOTER */}
+      {safeCart.length > 0 && (
+        <div className="hidden md:flex max-w-4xl mx-auto mt-6 p-4 bg-white rounded-lg shadow justify-between items-center">
+          <div className="font-semibold" style={{ color: colors.dark }}>
+            Total: Rs {total}
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={clearCart}
+              className="px-4 py-2 rounded"
+              style={{ backgroundColor: "#ccc", color: colors.dark }}
+            >
+              Clear
+            </button>
+
+            <button
+              onClick={handlePayment}
+              disabled={loading}
+              className="px-6 py-2 rounded text-white"
+              style={{ backgroundColor: colors.primary }}
+            >
+              {loading ? "Processing..." : "Pay"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
