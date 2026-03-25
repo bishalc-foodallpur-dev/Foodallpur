@@ -105,8 +105,10 @@ export default function Menu() {
       : foods.filter((f) => f.category === selectedCategory);
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
-
+    <div
+      className="min-h-screen p-4 md:p-6"
+      style={{ backgroundColor: colors.bg }}
+    >
       {/* CATEGORY FILTER */}
       <div className="mb-6 overflow-x-auto">
         <div className="flex gap-3 w-max mx-auto">
@@ -117,9 +119,11 @@ export default function Menu() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className="px-4 py-2 rounded-full text-sm capitalize whitespace-nowrap"
+                className="px-4 py-2 rounded-full text-sm capitalize whitespace-nowrap transition-all duration-150 active:scale-95 hover:scale-105"
                 style={{
-                  backgroundColor: isActive ? colors.primary : colors.dark,
+                  backgroundColor: isActive
+                    ? colors.primary
+                    : colors.dark,
                   color: colors.textLight,
                 }}
               >
@@ -132,9 +136,9 @@ export default function Menu() {
 
       {/* LOADING */}
       {loading ? (
-        <p className="text-center" style={{ color: colors.dark }}>
-          Loading foods...
-        </p>
+        <div className="text-center py-10">
+          <p style={{ color: colors.dark }}>Loading foods...</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredFoods?.map((food) => {
@@ -144,19 +148,26 @@ export default function Menu() {
             return (
               <div
                 key={food.id}
-                className="p-4 rounded-xl shadow-md"
+                className="p-4 rounded-xl shadow-md transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
                 style={{
                   backgroundColor: colors.bg,
                   border: `1px solid ${colors.cardBorder}`,
                 }}
               >
+                {/* IMAGE */}
                 <img
-                  src={food.image}
+                  src={
+                    food.image ||
+                    "https://via.placeholder.com/300x200?text=No+Image"
+                  }
                   alt={food.name}
                   className="w-full h-40 object-cover rounded-lg mb-3"
                 />
 
-                <h2 className="font-bold text-lg" style={{ color: colors.dark }}>
+                <h2
+                  className="font-bold text-lg"
+                  style={{ color: colors.dark }}
+                >
                   {food.name}
                 </h2>
 
@@ -166,29 +177,44 @@ export default function Menu() {
 
                 <div className="text-sm mb-3">
                   <p>Full: Rs. {food.fullPrice}</p>
-                  <p>Half: Rs. {food.halfPrice}</p>
+
+                  {food.halfPrice && (
+                    <p>Half: Rs. {food.halfPrice}</p>
+                  )}
                 </div>
 
                 {/* TYPE */}
                 <div className="flex gap-2 mb-3">
-                  <button
-                    onClick={() => handleTypeChange(food.id, "half")}
-                    style={{
-                      backgroundColor: type === "half" ? colors.primary : colors.dark,
-                      color: colors.textLight,
-                    }}
-                    className="px-3 py-1 rounded"
-                  >
-                    Half
-                  </button>
+                  {food.halfPrice && (
+                    <button
+                      onClick={() =>
+                        handleTypeChange(food.id, "half")
+                      }
+                      className="px-3 py-1 rounded transition-all active:scale-95"
+                      style={{
+                        backgroundColor:
+                          type === "half"
+                            ? colors.primary
+                            : colors.dark,
+                        color: colors.textLight,
+                      }}
+                    >
+                      Half
+                    </button>
+                  )}
 
                   <button
-                    onClick={() => handleTypeChange(food.id, "full")}
+                    onClick={() =>
+                      handleTypeChange(food.id, "full")
+                    }
+                    className="px-3 py-1 rounded transition-all active:scale-95"
                     style={{
-                      backgroundColor: type === "full" ? colors.primary : colors.dark,
+                      backgroundColor:
+                        type === "full"
+                          ? colors.primary
+                          : colors.dark,
                       color: colors.textLight,
                     }}
-                    className="px-3 py-1 rounded"
                   >
                     Full
                   </button>
@@ -198,7 +224,7 @@ export default function Menu() {
                 <div className="flex justify-center items-center gap-3 mb-3">
                   <button
                     onClick={() => decreaseQty(food.id)}
-                    className="px-3 py-1 rounded text-white"
+                    className="px-3 py-1 rounded text-white transition active:scale-90"
                     style={{ backgroundColor: colors.dark }}
                   >
                     -
@@ -208,7 +234,7 @@ export default function Menu() {
 
                   <button
                     onClick={() => increaseQty(food.id)}
-                    className="px-3 py-1 rounded text-white"
+                    className="px-3 py-1 rounded text-white transition active:scale-90"
                     style={{ backgroundColor: colors.dark }}
                   >
                     +
@@ -218,13 +244,14 @@ export default function Menu() {
                 {/* ADD TO CART */}
                 <button
                   onClick={() => handleAddToCart(food)}
-                  className="w-full py-2 rounded-lg"
+                  className="w-full py-2 rounded-lg font-semibold transition-all duration-150 active:scale-95 hover:scale-105 hover:brightness-110"
                   style={{
                     backgroundColor: colors.primary,
                     color: colors.textLight,
+                    boxShadow: "0 5px 12px rgba(0,0,0,0.2)",
                   }}
                 >
-                  Add to Cart
+                  Add to Cart 🛒
                 </button>
               </div>
             );
