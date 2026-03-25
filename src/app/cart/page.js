@@ -3,6 +3,7 @@
 import { useCart } from "@/context/CartContext";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import useAuth from "@/hooks/useAuth";
 
 export default function CartPage() {
   const {
@@ -13,6 +14,8 @@ export default function CartPage() {
     decreaseQty,
     clearCart,
   } = useCart();
+
+  const { user } = useAuth(); // ✅ added
 
   const safeCart = cart || [];
 
@@ -45,6 +48,11 @@ export default function CartPage() {
 
   // ✅ Handle Payment
   const handlePayment = async () => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
     if (loading) return;
 
     try {
@@ -58,6 +66,7 @@ export default function CartPage() {
       const order = {
         items: safeCart,
         total,
+        userId: user.uid, // ✅ IMPORTANT FIX
         createdAt: new Date().toISOString(),
         status: "pending",
       };
@@ -90,7 +99,7 @@ export default function CartPage() {
       setQrCode(paymentData.qrCode);
       setShowQR(true);
 
-      // ✅ Clear cart after QR shown
+      // ✅ Clear cart
       clearCart();
 
     } catch (error) {
@@ -243,6 +252,7 @@ export default function CartPage() {
                 width={200}
                 height={200}
                 className="mx-auto"
+                unoptimized // ✅ important for base64 QR
               />
 
               <p className="text-xs text-gray-500 mt-3">
